@@ -1,8 +1,9 @@
 const fs = require("fs");
 const request = require('request');
+const path = require('path');
 
 exports.name = '/imgur';
-exports.index = async (req, res, next) => {
+exports.index = (req, res, next) => {
     if (req.method !== 'GET') {
         return res.status(405).json({ error: 'Method Not Allowed' });
     }
@@ -10,8 +11,12 @@ exports.index = async (req, res, next) => {
     var link = req.query.link;
     if (!link) return res.json({ error: 'Missing link data query' });
 
-    try {
-        const { path, type } = await dl(link);
+    dl(link, function(err, result) {
+        if (err) {
+            return res.json({ error: 'An error occurred while downloading the file' });
+        }
+
+        const { path: filePath, type } = result;
 
         var options = {
             method: 'POST',
@@ -21,7 +26,7 @@ exports.index = async (req, res, next) => {
             }
         };
 
-        options.formData = type == "video" ? { 'video': fs.createReadStream(path) } : { 'image': fs.createReadStream(path) };
+        options.formData = type === "video" ? { 'video': fs.createReadStream(filePath) } : { 'image': fs.createReadStream(filePath) };
 
         request(options, function (error, response) {
             if (error) {
@@ -30,7 +35,7 @@ exports.index = async (req, res, next) => {
 
             var upload = JSON.parse(response.body);
 
-            fs.unlinkSync(path);
+            fs.unlinkSync(filePath);
 
             res.json({
                 uploaded: {
@@ -39,26 +44,24 @@ exports.index = async (req, res, next) => {
                 }
             });
         });
-    } catch (error) {
-        res.json({ error: 'An error occurred while processing your request' });
-    }
+    });
 };
 
-async function dl(url) {
-    return new Promise((resolve, reject) => {
-        let path;
-        request(url)
-            .on('response', function (response) {
-                const ext = response.headers['content-type'].split('/')[1];
-                path = __dirname + `/cache/fuck.${ext}`;
-                response
-                    .pipe(fs.createWriteStream(path))
-                    .on('finish', () => {
-                        resolve({ path, type: response.headers['content-type'].split('/')[0] });
-                    });
-            })
-            .on('error', (error) => {
-                reject(error);
-            });
-    });
+function dl(url, callback) {
+    let filePath;
+    request(url)
+        .on('response', function(response) {
+            const ext = response.headers['content-type'].split('/')[1];
+            filePath = path.join(__dirname, `/cache/file.${ext}`);
+            response.pipe(fs.createWriteStream(filePath))
+                .on('finish', () => {
+                    callback(null, { path: filePath, type: response.headers['content-type'].split('/')[0] });
+                })
+                .on('error', (error) => {
+                    callback(error);
+                });
+        })
+        .on('error', (error) => {
+            callback(error);
+        });
 }
