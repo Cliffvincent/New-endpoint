@@ -1,0 +1,27 @@
+{
+  "name": "nodejs",
+  "version": "1.0.0",
+  "node": "20.x",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@types/node": "^18.0.6",
+    "@xaviabot/fb-downloader": "^1.0.14",
+    "axios": "^1.7.7",
+    "betabotz-tools": "^0.0.7",
+    "cheerio": "^1.0.0",
+    "express": "^4.21.0",
+    "fs": "^0.0.1-security",
+    "fs-extra": "^11.2.0",
+    "gradient-string": "^2.0.2",
+    "path": "^0.12.7",
+    "request": "^2.88.2",
+    "scdl-core": "^1.1.0"
+  }
+}
