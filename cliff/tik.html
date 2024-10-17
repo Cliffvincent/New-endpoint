@@ -1,11 +1,10 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" href="https://i.imgur.com/RSY5NiU.png" type="image/jpeg">
-<link rel="shortcut icon" type="image/jpeg" href="https://i.imgur.com/RSY5NiU.png">
+    <link rel="shortcut icon" type="image/jpeg" href="https://i.imgur.com/RSY5NiU.png">
     <title>UPLOADER & BOOST</title>
     <style>
         * {
@@ -15,20 +14,24 @@
         }
 
         body {
+            background-color: #1e1e2f;
+            color: #f0f0f0;
             font-family: 'Arial', sans-serif;
-            background-color: #f4f6f9;
-            color: #2c3e50;
             line-height: 1.6;
             font-size: 16px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
         }
 
         .container {
             max-width: 1000px;
             margin: 0 auto;
             padding: 20px;
-            background-color: #fff;
+            background-color: #28293d;
             border-radius: 12px;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.7);
         }
 
         .endpoint-section {
@@ -38,9 +41,10 @@
         h2 {
             font-size: 1.8rem;
             margin-bottom: 20px;
-            color: #2980b9;
-            border-bottom: 2px solid #1abc9c;
-            padding-bottom: 5px;
+            color: #00adb5;
+            text-align: center;
+            text-transform: uppercase;
+            letter-spacing: 2px;
         }
 
         .endpoint {
@@ -48,21 +52,21 @@
             flex-direction: column;
             margin-bottom: 20px;
             padding: 20px;
-            background-color: #ecf0f1;
-            border-left: 6px solid #1abc9c;
+            background-color: #393a4d;
+            border-left: 6px solid #00adb5;
             border-radius: 8px;
             transition: transform 0.3s ease, box-shadow 0.3s ease;
         }
 
         .endpoint:hover {
             transform: translateY(-5px);
-            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
         }
 
         .endpoint a {
             font-size: 1.3rem;
             font-weight: bold;
-            color: #2980b9;
+            color: #00adb5;
             text-decoration: none;
             margin-bottom: 8px;
             transition: color 0.3s ease;
@@ -74,13 +78,18 @@
 
         .endpoint p {
             font-size: 1rem;
-            color: #7f8c8d;
+            color: #e0e0e0;
         }
 
         code {
-            background-color: #f0f0f0;
-            padding: 4px 8px;
-            border-radius: 4px;
+            display: block;
+            background-color: #2a2b3d;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 5px;
+            font-size: 0.9em;
+            color: #f08a5d;
+            overflow-x: auto;
         }
 
         @media (max-width: 768px) {
@@ -174,12 +183,12 @@
 
             <div class="endpoint">
                 <a href="/remini?url=">/remini</a>
-                <p>Enhance image with Remini. Example: <code>/remini?url=example.com/image.jpg</code></p>
+                <p>Enhance image with Remini. Example: <code>/remini?url=https://example.com/image.jpg</code></p>
             </div>
 
             <div class="endpoint">
                 <a href="/removebg?url=">/removebg</a>
-                <p>Remove background from image. Example: <code>/removebg?url=example.com/image.jpg</code></p>
+                <p>Remove background from image. Example: <code>/removebg?url=https://example.com/image.jpg</code></p>
             </div>
 
             <div class="endpoint">
@@ -191,9 +200,7 @@
                 <a href="/translate?text=&lang=">/translate</a>
                 <p>Translate text to a different language. Example: <code>/translate?text=Hello&lang=fr</code></p>
             </div>
-
         </div>
     </div>
 </body>
-
 </html>
