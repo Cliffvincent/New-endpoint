@@ -69,6 +69,72 @@ app.get("/tempmail/message", async function (req, res) {
 });
 
 
+
+const UPSTREAM = "https://betadash-api-swordslush-production.up.railway.app";
+
+app.disable("x-powered-by");
+app.use(helmet({ crossOriginResourcePolicy: { policy: "cross-origin" } }));
+
+function cleanQuery(obj) {
+  const u = new URLSearchParams();
+  for (const [k, v] of Object.entries(obj || {})) {
+    if (v === undefined || v === null) continue;
+    const s = String(v);
+    if (!s.length) continue;
+    u.set(k, s);
+  }
+  return u.toString();
+}
+
+async function proxy(req, res, upstreamPath) {
+  const qs = cleanQuery(req.query);
+  const url = `${UPSTREAM}${upstreamPath}${qs ? `?${qs}` : ""}`;
+
+  const ctrl = new AbortController();
+  const t = setTimeout(() => ctrl.abort(), 15000);
+
+  try {
+    const r = await fetch(url, {
+      method: "GET",
+      headers: {
+        "accept": "application/json,text/plain,*/*",
+        "user-agent": req.headers["user-agent"] || "proxy"
+      },
+      signal: ctrl.signal
+    });
+
+    clearTimeout(t);
+
+    const ct = r.headers.get("content-type") || "application/json; charset=utf-8";
+    res.status(r.status);
+    res.setHeader("content-type", ct);
+    res.setHeader("cache-control", "no-store");
+
+    const text = await r.text();
+    res.send(text);
+  } catch (e) {
+    clearTimeout(t);
+    res.status(502).json({ author: "proxy", results: [], error: "upstream_error" });
+  }
+}
+
+app.get("/myinstant", async (req, res) => {
+  await proxy(req, res, "/myinstant");
+});
+
+app.get("/myinstant/api", async (req, res) => {
+  await proxy(req, res, "/myinstant/api");
+});
+
+app.get("/myinstant/category", async (req, res) => {
+  await proxy(req, res, "/myinstant/category");
+});
+
+
+
+
+
+
 const UNSPLASH_ACCESS_KEY = 'RZEIOVfPhS7vMLkFdd2TSKGFBS4o9_FmcV1Nje3FSjw';
 
 app.get('/unsplash', async (req, res) => {
