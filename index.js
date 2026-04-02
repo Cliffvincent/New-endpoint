@@ -176,8 +176,6 @@ app.get('/unsplash', async (req, res) => {
 
 const cheerio = require("cheerio");
 
-const app = express();
-const PORT = process.env.PORT || 5000;
 
 function formatDuration(ms) {
   if (!ms) return null;
