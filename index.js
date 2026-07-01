@@ -13,7 +13,7 @@ app.get("/myinstant", async function (req, res) {
  res.sendFile(path.join(__dirname, "/cliff/tik.html"));
 });
 
-app.get("/soundcloud", async function (req, res) {
+app.get("/", async function (req, res) {
  res.sendFile(path.join(__dirname, "/cliff/sc.html"));
 });
 
