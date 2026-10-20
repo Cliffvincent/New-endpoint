@@ -244,7 +244,6 @@
 </head>
 <body>
   <div id="app">
-    <!-- Home Page -->
     <div class="page" id="homePage">
       <header class="topbar">
         <div class="sc-logo">
@@ -270,7 +269,6 @@
       </div>
     </div>
 
-    <!-- Feed Page -->
     <div class="page hidden" id="feedPage">
       <header class="topbar">
         <div class="sc-logo">
@@ -298,7 +296,6 @@
       </div>
     </div>
 
-    <!-- Search Page -->
     <div class="page hidden" id="searchPage">
       <header class="topbar">
         <div class="sc-logo">
@@ -340,7 +337,6 @@
       </div>
     </div>
 
-    <!-- Playlist Page -->
     <div class="page hidden" id="playlistPage">
       <div class="pl-topbar">
         <button class="back-btn" id="plBackBtn">
@@ -352,7 +348,6 @@
       <div class="pl-page-body" id="playlistPageBody"></div>
     </div>
 
-    <!-- Artist Profile Page -->
     <div class="page hidden" id="artistPage">
       <div class="pl-topbar" id="artistTopbar">
         <button class="back-btn" id="artistBackBtn">
@@ -364,7 +359,6 @@
       <div class="pl-page-body" id="artistPageBody"></div>
     </div>
 
-    <!-- Now Playing Page -->
     <div class="page slide-up" id="nowPlayingPage">
       <div class="np-full-bg" id="npFullBg"></div>
       <div class="np-overlay"></div>
@@ -440,7 +434,6 @@
       </div>
     </div>
 
-    <!-- Mini Player -->
     <div class="mini-player" id="miniPlayer" onclick="openNowPlaying()">
       <div class="mini-progress" id="miniProgress"></div>
       <div class="mini-art-ph" id="miniArtWrap">🎵</div>
@@ -467,7 +460,6 @@
       </div>
     </div>
 
-    <!-- Bottom Nav -->
     <nav class="bottom-nav">
       <button class="nav-tab active" id="navHome" onclick="switchTab('home')">
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -502,6 +494,7 @@
   <script>
     const audio = document.getElementById('audio');
     let tracks = [];
+    let discoverTracks = [];
     let currentIdx = -1;
     let currentTab = 'home';
     let searchTimer = null;
@@ -525,7 +518,6 @@
       return Math.floor(m)+'m';
     }
 
-    // Tab switching
     const tabMap = { home:'homePage', feed:'feedPage', search:'searchPage' };
     const navMap = { home:'navHome', feed:'navFeed', search:'navSearch' };
 
@@ -547,7 +539,6 @@
     function openNowPlaying() { document.getElementById('nowPlayingPage').classList.remove('slide-up'); }
     function closeNowPlaying() { document.getElementById('nowPlayingPage').classList.add('slide-up'); }
 
-    // Discover
     async function loadDiscover() {
       try {
         const res = await fetch('/discover');
@@ -561,43 +552,90 @@
     function renderDiscover(sections) {
       const container = document.getElementById('discoverView');
       container.innerHTML = '';
+      if (!sections || !sections.length) {
+        container.innerHTML = '<div class="state-box"><p>No discover content found.</p></div>';
+        return;
+      }
+      discoverTracks = [];
       sections.forEach(section => {
-        const isArtist = section.items.some(i => i.type === 'user');
-        const items = section.items.filter(Boolean);
+        const items = (section.items || []).filter(Boolean);
+        const users = items.filter(i => i.type === 'user');
+        const playlists = items.filter(i => i.type === 'playlist');
+        const tracksIn = items.filter(i => !i.type && (i.kind === 'track' || (i.id && i.duration && !i.track_count)));
+
         const div = document.createElement('div');
         div.className = 'discover-section';
-        if (isArtist) {
-          div.innerHTML = `
-            <div class="section-head"><div class="section-title">${esc(section.title)}</div></div>
-            <div class="artist-grid">${items.map(item=>`
-              <div class="artist-card" onclick="openArtistProfile('${esc(item.permalink_url||'')}')">
-                ${item.avatar_url
-                  ? `<img class="artist-avatar" src="${esc(item.avatar_url)}" loading="lazy" alt="" onerror="this.outerHTML='<div class=\\'artist-avatar-ph\\'>🎵</div>'" />`
-                  : `<div class="artist-avatar-ph">🎵</div>`}
-                <div class="artist-name">${esc(item.username||item.title||'')}</div>
-                ${item.followers_count?`<div class="artist-meta">${fmtNum(item.followers_count)} followers</div>`:''}
-              </div>`).join('')}
-            </div>`;
-        } else {
-          div.innerHTML = `
-            <div class="section-head"><div class="section-title">${esc(section.title)}</div></div>
-            <div class="playlist-grid">${items.map(item=>`
-              <div class="playlist-card" onclick="openPlaylist('${esc(item.permalink_url||'')}','${currentTab}')">
-                ${item.artwork_url
-                  ? `<img class="playlist-thumb" src="${esc(item.artwork_url)}" loading="lazy" alt="" onerror="this.outerHTML='<div class=\\'playlist-thumb-ph\\'>🎵</div>'" />`
-                  : `<div class="playlist-thumb-ph">🎵</div>`}
-                <div class="playlist-info">
-                  <div class="playlist-name">${esc(item.title||'')}</div>
-                  <div class="playlist-meta">${item.track_count ? item.track_count+' tracks' : ''}</div>
-                </div>
-              </div>`).join('')}
-            </div>`;
+        let html = `<div class="section-head"><div class="section-title">${esc(section.title)}</div></div>`;
+
+        if (users.length) {
+          html += `<div class="artist-grid">${users.map(item=>`
+            <div class="artist-card" onclick="openArtistProfile('${esc(item.permalink_url||'')}')">
+              ${item.avatar_url
+                ? `<img class="artist-avatar" src="${esc(item.avatar_url)}" loading="lazy" alt="" onerror="this.outerHTML='<div class=\\'artist-avatar-ph\\'>🎵</div>'" />`
+                : `<div class="artist-avatar-ph">🎵</div>`}
+              <div class="artist-name">${esc(item.username||'')}</div>
+              ${item.followers_count?`<div class="artist-meta">${fmtNum(item.followers_count)} followers</div>`:''}
+            </div>`).join('')}
+          </div>`;
         }
+
+        if (playlists.length) {
+          html += `<div class="playlist-grid" style="${users.length?'margin-top:10px':''}">${playlists.map(item=>`
+            <div class="playlist-card" onclick="openPlaylist('${esc(item.permalink_url||String(item.id))}','${currentTab}')">
+              ${item.artwork_url
+                ? `<img class="playlist-thumb" src="${esc(item.artwork_url)}" loading="lazy" alt="" onerror="this.outerHTML='<div class=\\'playlist-thumb-ph\\'>🎵</div>'" />`
+                : `<div class="playlist-thumb-ph">🎵</div>`}
+              <div class="playlist-info">
+                <div class="playlist-name">${esc(item.title||'')}</div>
+                <div class="playlist-meta">${item.track_count ? item.track_count+' tracks' : ''}</div>
+              </div>
+            </div>`).join('')}
+          </div>`;
+        }
+
+        if (tracksIn.length) {
+          const startIdx = discoverTracks.length;
+          discoverTracks = discoverTracks.concat(tracksIn.map(t => ({
+            id: t.id,
+            title: t.title || '',
+            duration: t.duration,
+            artwork_url: t.artwork_url,
+            permalink_url: t.permalink_url,
+            user: t.user ? { username: t.user.username } : null,
+            playback_count: t.playback_count || 0,
+            likes_count: t.likes_count || 0,
+            comment_count: t.comment_count || 0,
+            reposts_count: t.reposts_count || 0
+          })));
+          html += `<div class="track-list" style="${(users.length||playlists.length)?'margin-top:10px':''}">${tracksIn.map((t,i)=>`
+            <div class="track-item" onclick="playDiscoverTrack(${startIdx+i});openNowPlaying()">
+              <div class="track-num">${startIdx+i+1}</div>
+              <div class="art-wrap">
+                ${t.artwork_url
+                  ? `<img class="track-art" src="${esc(t.artwork_url)}" loading="lazy" alt="" onerror="this.outerHTML='<div class=\\'art-ph\\'>🎵</div>'" />`
+                  : `<div class="art-ph">🎵</div>`}
+                <div class="play-ov"><svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M8 5v14l11-7z"/></svg></div>
+              </div>
+              <div class="track-info">
+                <div class="track-title">${esc(t.title||'')}</div>
+                <div class="track-artist">${esc(t.user?.username||'')}</div>
+              </div>
+              <div class="track-dur">${t.duration||''}</div>
+            </div>`).join('')}
+          </div>`;
+        }
+
+        div.innerHTML = html;
         container.appendChild(div);
       });
     }
 
-    // Feed
+    function playDiscoverTrack(idx) {
+      tracks = discoverTracks;
+      currentContext = 'discover';
+      playTrack(idx);
+    }
+
     async function loadFeed() {
       try {
         const res = await fetch('/feed');
@@ -647,7 +685,6 @@
       else { following.add(idx); btn.textContent = 'Following'; btn.classList.add('following'); }
     }
 
-    // Artist Profile Page
     let artistReturnTab = 'feed';
 
     async function openArtistProfile(url) {
@@ -752,7 +789,6 @@
       openNowPlaying();
     }
 
-    // Search
     document.getElementById('searchInput').addEventListener('input', e => {
       clearTimeout(searchTimer);
       const q = e.target.value.trim();
@@ -883,7 +919,6 @@
 
       if (data.type === 'all') {
         const allTracks = data.tracks || [];
-        const startIdx = 0;
         tracks = allTracks;
         currentContext = 'search';
 
@@ -932,7 +967,6 @@
       }
     }
 
-    // Playlist Page
     async function openPlaylist(url, fromTab) {
       if (!url) return;
       playlistReturnTab = fromTab || currentTab;
@@ -951,13 +985,23 @@
       };
 
       try {
-        const res = await fetch('/scdl?url=' + encodeURIComponent(url));
+        const isId = /^\d+$/.test(String(url));
+        const res = await fetch(isId ? '/playlist?id=' + encodeURIComponent(url) : '/scdl?url=' + encodeURIComponent(url));
         const data = await res.json();
-        if (data.type !== 'playlist') {
-          document.getElementById('playlistPageBody').innerHTML = '<div class="state-box"><p style="color:#f87171">Not a playlist.</p></div>';
-          return;
+        const results = data.results || data;
+        if (isId) {
+          if (!results || !results.tracks) {
+            document.getElementById('playlistPageBody').innerHTML = '<div class="state-box"><p style="color:#f87171">Not a playlist.</p></div>';
+            return;
+          }
+          renderPlaylistPage(results);
+        } else {
+          if (data.type !== 'playlist') {
+            document.getElementById('playlistPageBody').innerHTML = '<div class="state-box"><p style="color:#f87171">Not a playlist.</p></div>';
+            return;
+          }
+          renderPlaylistPage(data.results);
         }
-        renderPlaylistPage(data.results);
       } catch {
         document.getElementById('playlistPageBody').innerHTML = '<div class="state-box"><p style="color:#f87171">Failed to load.</p></div>';
       }
@@ -1061,7 +1105,6 @@
       openNowPlaying();
     }
 
-    // Playback
     function playTrack(idx) {
       const t = tracks[idx];
       if (!t) return;
@@ -1145,7 +1188,6 @@
       navigator.mediaSession.setActionHandler('pause', () => { audio.pause(); setPause(true); });
     }
 
-    // Waveform
     const WF_BARS = 80;
     let wfH = [];
 
@@ -1164,7 +1206,6 @@
       if (audio.duration) audio.currentTime = (e.offsetX / document.getElementById('npWaveform').clientWidth) * audio.duration;
     }
 
-    // Controls
     function togglePlay() {
       if (!audio.src) return;
       if (audio.paused) { audio.play(); setPause(false); }
@@ -1205,7 +1246,6 @@
     audio.addEventListener('play', () => setPause(false));
     audio.addEventListener('pause', () => setPause(true));
 
-    // Download
     async function downloadTrack(e, idx) {
       e.stopPropagation();
       const btn = e.currentTarget;
@@ -1227,14 +1267,12 @@
       } catch { btn.classList.remove('loading'); btn.innerHTML = 'Err'; }
     }
 
-    // Share
     function npShare() {
       const t = tracks[currentIdx];
       if (!t?.permalink_url) return;
       window.location.href = t.permalink_url;
     }
 
-    // Init
     loadDiscover();
   </script>
 </body>
