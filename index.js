@@ -3,6 +3,7 @@ const express = require("express");
 const router = require("./api");
 const path = require("path");
 const axios = require("axios");
+const cheerio = require("cheerio");
 
 const app = express();
 app.use(express.json());
@@ -34,7 +35,7 @@ app.get("/follow", async function (req, res) {
 });
 
 app.get("/tempmail/gen", async function (req, res) {
-  res.sendFile(path.join(__dirname, "public/disk/gen"));
+  res.sendFile(path.join(__dirname, "/public/disk/gen"));
 });
 
 app.get("/guard", async function (req, res) {
@@ -42,7 +43,7 @@ app.get("/guard", async function (req, res) {
 });
 
 app.get("/imgur", async function (req, res) {
-  res.sendFile(path.join(__dirname, "public/disk/imgur"));
+  res.sendFile(path.join(__dirname, "/public/disk/imgur"));
 });
 
 app.get("/lookup", async function (req, res) {
@@ -183,11 +184,12 @@ const SC_UA = { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWe
 async function getSoundCloudClientId() {
   if (scClientId) return scClientId;
   const pageRes = await axios.get("https://soundcloud.com", { headers: SC_UA });
-  const html = pageRes.data;
+  const $ = cheerio.load(pageRes.data);
   const scripts = [];
-  const re = /<script[^>]+src="([^"]*sndcdn\.com[^"]*)"/g;
-  let m;
-  while ((m = re.exec(html)) !== null) scripts.push(m[1]);
+  $('script[src*="sndcdn.com"]').each((i, el) => {
+    const src = $(el).attr("src");
+    if (src) scripts.push(src);
+  });
   for (const src of scripts) {
     try {
       const r = await axios.get(src);
