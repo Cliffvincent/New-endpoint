@@ -179,26 +179,88 @@ function artUrl(u) {
 
 let scClientId = null;
 
-const SC_UA = { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36" };
+const SC_UA = {
+  "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+  "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+  "Accept-Language": "en-US,en;q=0.9"
+};
+
+const CLIENT_ID_PATTERNS = [
+  /client_id\s*[:=]\s*"([a-zA-Z0-9]{15,60})"/,
+  /client_id\s*[:=]\s*'([a-zA-Z0-9]{15,60})'/,
+  /[,{\s]client_id:"([a-zA-Z0-9]+)"/
+];
 
 async function getSoundCloudClientId() {
   if (scClientId) return scClientId;
+
   const pageRes = await axios.get("https://soundcloud.com", { headers: SC_UA });
-  const $ = cheerio.load(pageRes.data);
-  const scripts = [];
-  $('script[src*="sndcdn.com"]').each((i, el) => {
+  const html = pageRes.data;
+
+  const $ = cheerio.load(html);
+  const rawScripts = [];
+  $('script[src]').each((i, el) => {
     const src = $(el).attr("src");
-    if (src) scripts.push(src);
+    if (src) rawScripts.push(src);
   });
-  for (const src of scripts) {
+
+  const urls = [...new Set(
+    rawScripts
+      .filter(s => /sndcdn\.com|soundcloud\.com\/assets\/|^\/assets\//.test(s))
+      .map(s => new URL(s, "https://soundcloud.com").href)
+  )];
+
+  for (const src of urls) {
     try {
-      const r = await axios.get(src);
-      const c = r.data.match(/[,{]client_id:"([a-zA-Z0-9]+)"/);
-      if (c) { scClientId = c[1]; return scClientId; }
+      const r = await axios.get(src, { headers: SC_UA });
+      for (const re of CLIENT_ID_PATTERNS) {
+        const c = r.data.match(re);
+        if (c) { scClientId = c[1]; return scClientId; }
+      }
     } catch {}
   }
+
   throw new Error("Could not extract SoundCloud client_id");
 }
+
+app.get("/scdebug", async (req, res) => {
+  const report = { pageStatus: null, scriptCount: 0, scripts: [], client_id: null, errors: [] };
+
+  try {
+    const pageRes = await axios.get("https://soundcloud.com", { headers: SC_UA });
+    report.pageStatus = pageRes.status;
+
+    const $ = cheerio.load(pageRes.data);
+    $('script[src]').each((i, el) => {
+      const src = $(el).attr("src");
+      if (src) report.scripts.push(src);
+    });
+    report.scriptCount = report.scripts.length;
+
+    const urls = [...new Set(
+      report.scripts
+        .filter(s => /sndcdn\.com|soundcloud\.com\/assets\/|^\/assets\//.test(s))
+        .map(s => new URL(s, "https://soundcloud.com").href)
+    )];
+
+    for (const src of urls) {
+      try {
+        const r = await axios.get(src, { headers: SC_UA });
+        for (const re of CLIENT_ID_PATTERNS) {
+          const c = r.data.match(re);
+          if (c) { report.client_id = c[1]; scClientId = c[1]; break; }
+        }
+        if (report.client_id) break;
+      } catch (e) {
+        report.errors.push(`${src}: ${e.message}`);
+      }
+    }
+  } catch (e) {
+    report.errors.push(`page: ${e.message}`);
+  }
+
+  res.json(report);
+});
 
 async function normalizeSoundCloudUrl(rawUrl) {
   let url = rawUrl.trim();
