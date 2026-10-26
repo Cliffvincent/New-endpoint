@@ -3,7 +3,6 @@ const express = require("express");
 const router = require("./api");
 const path = require("path");
 const axios = require("axios");
-const cheerio = require("cheerio");
 
 const app = express();
 app.use(express.json());
@@ -11,11 +10,11 @@ app.use(express.json());
 app.use(router);
 
 app.get("/myinstant", async function (req, res) {
-  res.sendFile(path.join(__dirname, "/cliff/tik.html"));
+ res.sendFile(path.join(__dirname, "/cliff/tik.html"));
 });
 
-app.get("/", async function (req, res) {
-  res.sendFile(path.join(__dirname, "/cliff/sc.html"));
+app.get("/soundcloud", async function (req, res) {
+ res.sendFile(path.join(__dirname, "/cliff/sc.html"));
 });
 
 app.get("/ddos/site/spam", async function (req, res) {
@@ -23,11 +22,11 @@ app.get("/ddos/site/spam", async function (req, res) {
 });
 
 app.get("/emojimix", async function (req, res) {
-  res.sendFile(path.join(__dirname, "public/disk/emojimix"));
+res.sendFile(path.join(__dirname, "public/disk/emojimix"));
 });
 
 app.get("/fbshare", async function (req, res) {
-  res.sendFile(path.join(__dirname, "public/disk/fbshare"));
+res.sendFile(path.join(__dirname, "public/disk/fbshare"));
 });
 
 app.get("/follow", async function (req, res) {
@@ -35,7 +34,7 @@ app.get("/follow", async function (req, res) {
 });
 
 app.get("/tempmail/gen", async function (req, res) {
-  res.sendFile(path.join(__dirname, "/public/disk/gen"));
+res.sendFile(path.join(__dirname, "public/disk/gen"));
 });
 
 app.get("/guard", async function (req, res) {
@@ -70,9 +69,12 @@ app.get("/translate", async function (req, res) {
   res.sendFile(path.join(__dirname, "/public/disk/trans"));
 });
 
+
 app.get("/tempmail/message", async function (req, res) {
   res.sendFile(path.join(__dirname, "/public/disk/message"));
 });
+
+
 
 const UPSTREAM = "https://betadash-api-swordslush-production.up.railway.app";
 
@@ -134,6 +136,11 @@ app.get("/myinstant/category", async (req, res) => {
   await proxy(req, res, "/myinstant/category");
 });
 
+
+
+
+
+
 const UNSPLASH_ACCESS_KEY = 'RZEIOVfPhS7vMLkFdd2TSKGFBS4o9_FmcV1Nje3FSjw';
 
 app.get('/unsplash', async (req, res) => {
@@ -167,6 +174,9 @@ app.get('/unsplash', async (req, res) => {
   }
 });
 
+const cheerio = require("cheerio");
+
+
 function formatDuration(ms) {
   if (!ms) return null;
   const s = Math.floor(ms / 1000);
@@ -179,95 +189,33 @@ function artUrl(u) {
 
 let scClientId = null;
 
-const SC_UA = {
-  "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
-  "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-  "Accept-Language": "en-US,en;q=0.9"
-};
-
-const CLIENT_ID_PATTERNS = [
-  /client_id\s*[:=]\s*"([a-zA-Z0-9]{15,60})"/,
-  /client_id\s*[:=]\s*'([a-zA-Z0-9]{15,60})'/,
-  /[,{\s]client_id:"([a-zA-Z0-9]+)"/
-];
-
 async function getSoundCloudClientId() {
   if (scClientId) return scClientId;
-
-  const pageRes = await axios.get("https://soundcloud.com", { headers: SC_UA });
-  const html = pageRes.data;
-
-  const $ = cheerio.load(html);
-  const rawScripts = [];
-  $('script[src]').each((i, el) => {
-    const src = $(el).attr("src");
-    if (src) rawScripts.push(src);
+  const pageRes = await axios.get("https://soundcloud.com", {
+    headers: { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36" }
   });
-
-  const urls = [...new Set(
-    rawScripts
-      .filter(s => /sndcdn\.com|soundcloud\.com\/assets\/|^\/assets\//.test(s))
-      .map(s => new URL(s, "https://soundcloud.com").href)
-  )];
-
-  for (const src of urls) {
+  const $ = cheerio.load(pageRes.data);
+  const scriptUrls = [];
+  $("script[src]").each((_, el) => {
+    const src = $(el).attr("src");
+    if (src && src.includes("sndcdn.com")) scriptUrls.push(src);
+  });
+  for (const src of scriptUrls) {
     try {
-      const r = await axios.get(src, { headers: SC_UA });
-      for (const re of CLIENT_ID_PATTERNS) {
-        const c = r.data.match(re);
-        if (c) { scClientId = c[1]; return scClientId; }
-      }
+      const r = await axios.get(src);
+      const m = r.data.match(/[,{]client_id:"([a-zA-Z0-9]+)"/);
+      if (m) { scClientId = m[1]; return scClientId; }
     } catch {}
   }
-
   throw new Error("Could not extract SoundCloud client_id");
 }
-
-app.get("/scdebug", async (req, res) => {
-  const report = { pageStatus: null, scriptCount: 0, scripts: [], client_id: null, errors: [] };
-
-  try {
-    const pageRes = await axios.get("https://soundcloud.com", { headers: SC_UA });
-    report.pageStatus = pageRes.status;
-
-    const $ = cheerio.load(pageRes.data);
-    $('script[src]').each((i, el) => {
-      const src = $(el).attr("src");
-      if (src) report.scripts.push(src);
-    });
-    report.scriptCount = report.scripts.length;
-
-    const urls = [...new Set(
-      report.scripts
-        .filter(s => /sndcdn\.com|soundcloud\.com\/assets\/|^\/assets\//.test(s))
-        .map(s => new URL(s, "https://soundcloud.com").href)
-    )];
-
-    for (const src of urls) {
-      try {
-        const r = await axios.get(src, { headers: SC_UA });
-        for (const re of CLIENT_ID_PATTERNS) {
-          const c = r.data.match(re);
-          if (c) { report.client_id = c[1]; scClientId = c[1]; break; }
-        }
-        if (report.client_id) break;
-      } catch (e) {
-        report.errors.push(`${src}: ${e.message}`);
-      }
-    }
-  } catch (e) {
-    report.errors.push(`page: ${e.message}`);
-  }
-
-  res.json(report);
-});
 
 async function normalizeSoundCloudUrl(rawUrl) {
   let url = rawUrl.trim();
   if (url.includes("on.soundcloud.com")) {
     const r = await axios.get(url, {
       maxRedirects: 10,
-      headers: SC_UA
+      headers: { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36" }
     });
     url = (r.request?.res?.responseUrl || r.config?.url || url).split("?")[0];
   }
@@ -282,7 +230,7 @@ async function resolveAudioUrl(transcodings, clientId) {
   try {
     const r = await axios.get(progressive.url, {
       params: { client_id: clientId },
-      headers: SC_UA
+      headers: { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36" }
     });
     return r.data?.url || null;
   } catch { return null; }
@@ -321,6 +269,7 @@ function formatTrack(track, audioUrl) {
   };
 }
 
+// ── Search format helpers ──
 function fmtTrack(t) {
   return {
     kind: "track",
@@ -379,12 +328,15 @@ function fmtPlaylist(p) {
   };
 }
 
+// ── GET /sc — Search ──
 app.get("/sc", async (req, res) => {
   const query = req.query.search;
-  const type = req.query.type || "all";
+  const type  = req.query.type || "all"; // all | tracks | users | playlists | albums
   const limit = Math.min(parseInt(req.query.limit || "20"), 50);
 
   if (!query) return res.status(400).json({ error: "search query parameter is required" });
+
+  const SC_HEADERS = { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36" };
 
   try {
     const clientId = await getSoundCloudClientId();
@@ -392,28 +344,28 @@ app.get("/sc", async (req, res) => {
 
     if (type === "all") {
       const [trRes, usRes, plRes, alRes] = await Promise.allSettled([
-        axios.get("https://api-v2.soundcloud.com/search/tracks", { params: { ...base, limit: 10 }, headers: SC_UA }),
-        axios.get("https://api-v2.soundcloud.com/search/users", { params: { ...base, limit: 5 }, headers: SC_UA }),
-        axios.get("https://api-v2.soundcloud.com/search/playlists", { params: { ...base, limit: 5 }, headers: SC_UA }),
-        axios.get("https://api-v2.soundcloud.com/search/albums", { params: { ...base, limit: 5 }, headers: SC_UA })
+        axios.get("https://api-v2.soundcloud.com/search/tracks",    { params: { ...base, limit: 10 }, headers: SC_HEADERS }),
+        axios.get("https://api-v2.soundcloud.com/search/users",     { params: { ...base, limit:  5 }, headers: SC_HEADERS }),
+        axios.get("https://api-v2.soundcloud.com/search/playlists", { params: { ...base, limit:  5 }, headers: SC_HEADERS }),
+        axios.get("https://api-v2.soundcloud.com/search/albums",    { params: { ...base, limit:  5 }, headers: SC_HEADERS })
       ]);
-      const tracks = trRes.status === "fulfilled" ? (trRes.value.data.collection || []).map(fmtTrack).filter(t => t.id && t.title) : [];
-      const users = usRes.status === "fulfilled" ? (usRes.value.data.collection || []).map(fmtUser).filter(u => u.id && u.username) : [];
+      const tracks    = trRes.status === "fulfilled" ? (trRes.value.data.collection || []).map(fmtTrack).filter(t => t.id && t.title) : [];
+      const users     = usRes.status === "fulfilled" ? (usRes.value.data.collection || []).map(fmtUser).filter(u => u.id && u.username) : [];
       const playlists = plRes.status === "fulfilled" ? (plRes.value.data.collection || []).map(fmtPlaylist).filter(p => p.id && p.title) : [];
-      const albums = alRes.status === "fulfilled" ? (alRes.value.data.collection || []).map(fmtPlaylist).filter(p => p.id && p.title) : [];
+      const albums    = alRes.status === "fulfilled" ? (alRes.value.data.collection || []).map(fmtPlaylist).filter(p => p.id && p.title) : [];
       return res.json({ author: "yazky", query, type: "all", tracks, users, playlists, albums });
     }
 
     const endpoints = { tracks: "tracks", users: "users", playlists: "playlists", albums: "albums" };
     const ep = endpoints[type] || "tracks";
     const { data } = await axios.get(`https://api-v2.soundcloud.com/search/${ep}`, {
-      params: { ...base, limit }, headers: SC_UA
+      params: { ...base, limit }, headers: SC_HEADERS
     });
     const collection = data.collection || [];
     let results;
-    if (type === "users") results = collection.map(fmtUser).filter(u => u.id && u.username);
+    if (type === "users")     results = collection.map(fmtUser).filter(u => u.id && u.username);
     else if (type === "playlists" || type === "albums") results = collection.map(fmtPlaylist).filter(p => p.id && p.title);
-    else results = collection.map(fmtTrack).filter(t => t.id && t.title);
+    else                      results = collection.map(fmtTrack).filter(t => t.id && t.title);
 
     res.json({ author: "yazky", query, type, total: results.length, results });
 
@@ -426,6 +378,7 @@ app.get("/sc", async (req, res) => {
   }
 });
 
+// ── GET /scdl — Resolve URL ──
 app.get("/scdl", async (req, res) => {
   const { url } = req.query;
   if (!url) return res.status(400).json({ author: "yazky", error: "'url' query parameter is required" });
@@ -435,7 +388,7 @@ app.get("/scdl", async (req, res) => {
     const resolvedUrl = await normalizeSoundCloudUrl(url);
     const { data } = await axios.get("https://api-v2.soundcloud.com/resolve", {
       params: { url: resolvedUrl, client_id: clientId },
-      headers: SC_UA
+      headers: { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36" }
     });
 
     if (data.kind === "track") {
@@ -446,8 +399,10 @@ app.get("/scdl", async (req, res) => {
     if (data.kind === "playlist") {
       const rawTracks = (data.tracks || []).slice(0, 50);
 
+      // Identify stub tracks (missing title or user — SC returns partial objects for large playlists)
       const stubIds = rawTracks.filter(t => !t.title || !t.user).map(t => t.id).filter(Boolean);
 
+      // Batch-fetch full data for stub tracks (SC allows up to 50 ids per request)
       const fullTrackMap = {};
       if (stubIds.length) {
         try {
@@ -456,11 +411,11 @@ app.get("/scdl", async (req, res) => {
           await Promise.all(chunks.map(async chunk => {
             const { data: fetched } = await axios.get("https://api-v2.soundcloud.com/tracks", {
               params: { ids: chunk.join(","), client_id: clientId },
-              headers: SC_UA
+              headers: { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36" }
             });
             (fetched || []).forEach(ft => { fullTrackMap[ft.id] = ft; });
           }));
-        } catch (e) {}
+        } catch (e) { /* fall back to stub data */ }
       }
 
       const tracks = rawTracks.map(t => {
@@ -518,14 +473,15 @@ app.get("/scdl", async (req, res) => {
 
     if (data.kind === "user") {
       const userId = data.id;
+      const SC_H = { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36" };
       let playlists = [], topTracks = [];
       try {
         const [plRes, trRes] = await Promise.allSettled([
           axios.get(`https://api-v2.soundcloud.com/users/${userId}/playlists`, {
-            params: { limit: 20, client_id: clientId }, headers: SC_UA
+            params: { limit: 20, client_id: clientId }, headers: SC_H
           }),
           axios.get(`https://api-v2.soundcloud.com/users/${userId}/tracks`, {
-            params: { limit: 10, client_id: clientId }, headers: SC_UA
+            params: { limit: 10, client_id: clientId }, headers: SC_H
           })
         ]);
         if (plRes.status === "fulfilled")
@@ -560,282 +516,233 @@ app.get("/scdl", async (req, res) => {
   }
 });
 
+// ── GET /discover — Discover Feed ──
 app.get("/discover", async (req, res) => {
-  const genre = (req.query.genre || "all-music").toLowerCase();
-  const limit = Math.min(parseInt(req.query.limit || "10"), 50);
-
   try {
-    const clientId = await getSoundCloudClientId();
-
-    const [selRes, trendRes] = await Promise.allSettled([
-      axios.get("https://api-v2.soundcloud.com/selections", {
-        params: { client_id: clientId, app_locale: "en" },
-        headers: SC_UA
-      }),
-      axios.get(`https://api-v2.soundcloud.com/discover/trending/${encodeURIComponent(genre)}`, {
-        params: { client_id: clientId, app_locale: "en", limit },
-        headers: SC_UA
-      })
-    ]);
-
-    if (selRes.status !== "fulfilled" && trendRes.status !== "fulfilled") {
-      throw new Error("No discover data returned");
-    }
-
-    const sections = [];
-
-    if (selRes.status === "fulfilled") {
-      const selections = selRes.value.data.selections || [];
-      for (const sel of selections) {
-        const items = [];
-        for (const item of sel.selection_items || []) {
-          if (item.kind === "system_playlist" || item.kind === "playlist") {
-            items.push({
-              type: "playlist",
-              id: item.id,
-              title: item.title,
-              track_count: item.track_count || null,
-              artwork_url: artUrl(item.artwork_url),
-              permalink_url: item.permalink_url,
-              genre: item.genre || null,
-              user: item.user ? {
-                id: item.user.id,
-                username: item.user.username,
-                avatar_url: artUrl(item.user.avatar_url),
-                permalink_url: item.user.permalink_url
-              } : null
-            });
-          } else if (item.kind === "user") {
-            items.push({
-              type: "user",
-              id: item.id,
-              username: item.username,
-              full_name: item.full_name || null,
-              followers_count: item.followers_count || 0,
-              track_count: item.track_count || 0,
-              avatar_url: artUrl(item.avatar_url),
-              permalink_url: item.permalink_url,
-              verified: item.verified || false
-            });
-          } else if (item.kind === "track") {
-            items.push(fmtTrack(item));
-          }
-        }
-        if (items.length) sections.push({ title: sel.title, id: sel.id, items });
-      }
-    }
-
-    if (trendRes.status === "fulfilled") {
-      const tracks = (trendRes.value.data.tracks || []).map(fmtTrack).filter(t => t.id && t.title);
-      if (tracks.length) sections.push({ title: `Trending: ${genre}`, id: `trending-${genre}`, items: tracks });
-    }
-
-    res.json({ author: "yazky", genre, sections });
-
-  } catch (err) {
-    const status = err.response?.status;
-    if (status === 401 || status === 403) {
-      scClientId = null;
-      return res.status(401).json({ author: "yazky", error: "Auth failed, retry." });
-    }
-    res.status(500).json({ author: "yazky", error: err.message });
-  }
-});
-
-app.get("/playlist", async (req, res) => {
-  const id = req.query.id;
-
-  if (!id) return res.status(400).json({ author: "yazky", error: "'id' query parameter is required" });
-
-  try {
-    const clientId = await getSoundCloudClientId();
-    const { data } = await axios.get(`https://api-v2.soundcloud.com/playlists/${id}`, {
-      params: { client_id: clientId },
-      headers: SC_UA
+    const response = await axios.get("https://m.soundcloud.com/discover", {
+      headers: { "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) AppleWebKit/605.1.15" }
     });
 
-    const tracks = (data.tracks || []).map(t => ({
-      id: t.id,
-      title: t.title || null,
-      duration_ms: t.duration,
-      duration: formatDuration(t.duration),
-      genre: t.genre || null,
-      playback_count: t.playback_count || 0,
-      likes_count: t.likes_count || 0,
-      artwork_url: artUrl(t.artwork_url),
-      permalink_url: t.permalink_url,
-      created_at: t.created_at || null,
-      user: t.user ? {
-        id: t.user.id,
-        username: t.user.username || null,
-        avatar_url: artUrl(t.user.avatar_url),
-        permalink_url: t.user.permalink_url || null
-      } : null
-    }));
+    const $ = cheerio.load(response.data);
+    const rawJson = $("script#__NEXT_DATA__").html();
+    if (!rawJson) return res.status(500).json({ error: "Could not parse discover page" });
 
-    res.json({
-      author: "yazky",
-      results: {
-        id: data.id,
-        title: data.title,
-        description: data.description || null,
-        track_count: data.track_count,
-        duration_ms: data.duration,
-        duration: formatDuration(data.duration),
-        genre: data.genre || null,
-        likes_count: data.likes_count,
-        artwork_url: artUrl(data.artwork_url),
-        permalink_url: data.permalink_url,
-        created_at: data.created_at,
-        user: data.user ? {
-          id: data.user.id,
-          username: data.user.username,
-          full_name: data.user.full_name || null,
-          avatar_url: artUrl(data.user.avatar_url),
-          permalink_url: data.user.permalink_url
-        } : null,
-        tracks
-      }
-    });
+    const entities = JSON.parse(rawJson)?.props?.pageProps?.initialStoreState?.entities;
+    const playlists = entities?.playlists || {};
+    const users     = entities?.users     || {};
+    const msc       = entities?.mixedSelectionsCollections || {};
 
-  } catch (err) {
-    const status = err.response?.status;
-    if (status === 401 || status === 403) {
-      scClientId = null;
-      return res.status(401).json({ author: "yazky", error: "Auth failed, retry." });
-    }
-    if (status === 404) return res.status(404).json({ author: "yazky", error: "Playlist not found." });
-    res.status(500).json({ author: "yazky", error: err.message });
-  }
-});
-
-app.get("/charts", async (req, res) => {
-  const kind = req.query.kind === "new" ? "new" : "top";
-  const genre = (req.query.genre || "all-music").toLowerCase();
-  const limit = Math.min(parseInt(req.query.limit || "20"), 50);
-
-  try {
-    const clientId = await getSoundCloudClientId();
-    const { data } = await axios.get("https://api-v2.soundcloud.com/charts", {
-      params: {
-        client_id: clientId,
-        kind,
-        genre: `soundcloud:genres:${genre}`,
-        limit,
-        app_locale: "en"
-      },
-      headers: SC_UA
-    });
-
-    const results = (data.collection || []).map(entry => {
-      const t = entry.track || entry;
+    function resolvePlaylist(urn) {
+      const entry = playlists[urn];
+      const p = entry?.data || entry;
+      if (!p) return null;
       return {
-        chart_position: entry.chart_position || null,
-        ...fmtTrack(t)
+        id: p.id,
+        title: p.title,
+        track_count: p.track_count,
+        likes_count: p.likes_count,
+        duration_ms: p.duration,
+        duration: formatDuration(p.duration),
+        artwork_url: artUrl(p.artwork_url),
+        permalink_url: p.permalink_url,
+        genre: p.genre || null,
+        user: p.user ? {
+          id: p.user.id,
+          username: p.user.username,
+          avatar_url: artUrl(p.user.avatar_url),
+          permalink_url: p.user.permalink_url
+        } : null
       };
-    }).filter(t => t.id && t.title);
-
-    res.json({ author: "yazky", kind, genre, total: results.length, results });
-
-  } catch (err) {
-    const status = err.response?.status;
-    if (status === 401 || status === 403) {
-      scClientId = null;
-      return res.status(401).json({ author: "yazky", error: "Auth failed, retry." });
     }
-    res.status(500).json({ author: "yazky", error: err.message });
-  }
-});
 
-app.get("/feed", async (req, res) => {
-  try {
-    const clientId = await getSoundCloudClientId();
-    const userMap = {};
-
-    function addUser(u) {
-      if (!u?.id || !u?.username) return;
-      if (userMap[u.id]) return;
-      userMap[u.id] = {
+    function resolveUser(urn) {
+      const entry = users[urn];
+      const u = entry?.data || entry;
+      if (!u) return null;
+      return {
         id: u.id,
         username: u.username,
         full_name: u.full_name || null,
-        followers_count: u.followers_count || 0,
-        track_count: u.track_count || 0,
+        followers_count: u.followers_count,
+        track_count: u.track_count,
         avatar_url: artUrl(u.avatar_url),
-        permalink_url: u.permalink_url,
-        verified: u.verified || false,
-        description: u.description || null
+        permalink_url: u.permalink_url
       };
     }
 
-    const genreSlugs = [
-      "all-music", "hiphop-rap", "indie", "pop", "electronic",
-      "alternative-rock", "danceedm", "r-b-soul", "classical", "jazz", "reggae"
-    ];
+    const sections = Object.values(msc).map(entry => {
+      const sel = entry?.data || entry;
+      const items = (sel?.collection || []).map(item => {
+        if (item.schema === "playlist") return { type: "playlist", ...resolvePlaylist(item.id) };
+        if (item.schema === "user")     return { type: "user",     ...resolveUser(item.id) };
+        return null;
+      }).filter(Boolean);
 
-    const chartResults = await Promise.allSettled(
-      genreSlugs.map(g => axios.get("https://api-v2.soundcloud.com/charts", {
-        params: {
-          client_id: clientId,
-          kind: "top",
-          genre: `soundcloud:genres:${g}`,
-          limit: 20,
-          app_locale: "en"
-        },
-        headers: SC_UA
-      }))
-    );
-
-    chartResults.forEach(r => {
-      if (r.status !== "fulfilled") return;
-      (r.value.data.collection || []).forEach(entry => {
-        const t = entry.track || entry;
-        if (t.user) addUser(t.user);
-      });
+      return {
+        title: sel.title,
+        urn: sel.urn,
+        items
+      };
     });
 
-    const curatorSlugs = [
-      "soundcloud-scenes",
-      "soundcloudmusicuk",
-      "soundcloud-damedame",
-      "soundcloud-hustle",
-      "soundcloud-peak"
-    ];
+    res.json({ author: "yazky", sections });
 
-    const curatorResults = await Promise.allSettled(
-      curatorSlugs.map(s => axios.get("https://api-v2.soundcloud.com/resolve", {
-        params: { url: `https://soundcloud.com/${s}`, client_id: clientId },
-        headers: SC_UA
-      }))
-    );
-
-    const curatorIds = curatorResults
-      .filter(r => r.status === "fulfilled" && r.value.data?.id)
-      .map(r => r.value.data.id);
-
-    const followingResults = await Promise.allSettled(
-      curatorIds.map(id => axios.get(`https://api-v2.soundcloud.com/users/${id}/followings`, {
-        params: { limit: 50, client_id: clientId },
-        headers: SC_UA
-      }))
-    );
-
-    followingResults.forEach(r => {
-      if (r.status !== "fulfilled") return;
-      (r.value.data.collection || []).forEach(addUser);
-    });
-
-    if (!Object.keys(userMap).length) {
-      return res.status(500).json({ error: "Could not fetch artists" });
-    }
-
-    const artists = Object.values(userMap).sort((a, b) => b.followers_count - a.followers_count);
-
-    res.json({ author: "yazky", total: artists.length, artists });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
+
+// ── GET /feed — Who to follow ──
+app.get("/feed", async (req, res) => {
+  try {
+    // Fetch both feed and discover pages in parallel for more artists
+    const [feedRes, discoverRes] = await Promise.allSettled([
+      axios.get("https://m.soundcloud.com/feed", {
+        headers: { "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) AppleWebKit/605.1.15" }
+      }),
+      axios.get("https://m.soundcloud.com/discover", {
+        headers: { "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) AppleWebKit/605.1.15" }
+      })
+    ]);
+
+    const userMap = {};
+
+    function extractUsers(html) {
+      try {
+        const $ = cheerio.load(html);
+        const rawJson = $("script#__NEXT_DATA__").html();
+        if (!rawJson) return;
+        const entities = JSON.parse(rawJson)?.props?.pageProps?.initialStoreState?.entities;
+        const users = entities?.users || {};
+        Object.values(users).forEach(entry => {
+          const u = entry?.data || entry;
+          if (!u?.id || !u?.username) return;
+          userMap[u.id] = {
+            id: u.id,
+            username: u.username,
+            full_name: u.full_name || null,
+            followers_count: u.followers_count || 0,
+            track_count: u.track_count || 0,
+            avatar_url: artUrl(u.avatar_url),
+            permalink_url: u.permalink_url,
+            verified: u.verified || false,
+            description: u.description || null
+          };
+        });
+      } catch {}
+    }
+
+    if (feedRes.status === "fulfilled") extractUsers(feedRes.value.data);
+    if (discoverRes.status === "fulfilled") extractUsers(discoverRes.value.data);
+
+    // Scrape genre chart pages for real artists
+    const genrePages = [
+      "hip-hop-rap", "indie", "pop", "electronic", "alternative-rock",
+      "dance-edm", "r-b-soul", "classical", "jazz", "reggae"
+    ];
+    const chartPageResults = await Promise.allSettled(
+      genrePages.map(g => axios.get(`https://m.soundcloud.com/charts/top/${g}`, {
+        headers: { "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) AppleWebKit/605.1.15" }
+      }))
+    );
+
+    function extractUsersFromChartPage(html) {
+      try {
+        const $ = cheerio.load(html);
+        const rawJson = $("script#__NEXT_DATA__").html();
+        if (!rawJson) return;
+        const nextData = JSON.parse(rawJson);
+        const entities = nextData?.props?.pageProps?.initialStoreState?.entities || {};
+        // Extract from entities.users
+        const users = entities?.users || {};
+        Object.values(users).forEach(entry => {
+          const u = entry?.data || entry;
+          if (!u?.id || !u?.username) return;
+          if (userMap[u.id]) return;
+          userMap[u.id] = {
+            id: u.id, username: u.username, full_name: u.full_name || null,
+            followers_count: u.followers_count || 0, track_count: u.track_count || 0,
+            avatar_url: artUrl(u.avatar_url), permalink_url: u.permalink_url,
+            verified: u.verified || false, description: u.description || null
+          };
+        });
+        // Also extract from tracks embedded in the chart
+        const tracks = entities?.tracks || {};
+        Object.values(tracks).forEach(entry => {
+          const t = entry?.data || entry;
+          const u = t?.user;
+          if (!u?.id || !u?.username) return;
+          if (userMap[u.id]) return;
+          userMap[u.id] = {
+            id: u.id, username: u.username, full_name: u.full_name || null,
+            followers_count: u.followers_count || 0, track_count: u.track_count || 0,
+            avatar_url: artUrl(u.avatar_url), permalink_url: u.permalink_url,
+            verified: u.verified || false, description: u.description || null
+          };
+        });
+      } catch {}
+    }
+
+    chartPageResults.forEach(r => {
+      if (r.status === "fulfilled") extractUsersFromChartPage(r.value.data);
+    });
+
+    // Fetch followings of SC genre curator accounts — these are real popular artists
+    try {
+      const clientId = await getSoundCloudClientId();
+      const SC_H = { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36" };
+      // Well-known SC genre curator account IDs
+      const curatorSlugs = [
+        "soundcloud-scenes",   // indie/bedroom pop
+        "soundcloudmusicuk",   // UK artists
+        "soundcloud-damedame", // Japanese artists
+        "soundcloud-hustle",   // rap/hip-hop
+        "soundcloud-peak",     // EDM
+      ];
+      // Resolve curator IDs (we already know scenes: 603473631)
+      const curatorIds = [603473631];
+      const slugResults = await Promise.allSettled(
+        curatorSlugs.slice(1).map(s => axios.get(`https://api-v2.soundcloud.com/resolve`, {
+          params: { url: `https://soundcloud.com/${s}`, client_id: clientId }, headers: SC_H
+        }))
+      );
+      slugResults.forEach(r => {
+        if (r.status === "fulfilled" && r.value.data?.id) curatorIds.push(r.value.data.id);
+      });
+
+      const followingResults = await Promise.allSettled(
+        curatorIds.map(id => axios.get(`https://api-v2.soundcloud.com/users/${id}/followings`, {
+          params: { limit: 50, client_id: clientId }, headers: SC_H
+        }))
+      );
+      followingResults.forEach(r => {
+        if (r.status !== "fulfilled") return;
+        (r.value.data.collection || []).forEach(u => {
+          if (!u?.id || !u?.username) return;
+          if (userMap[u.id]) return;
+          userMap[u.id] = {
+            id: u.id, username: u.username, full_name: u.full_name || null,
+            followers_count: u.followers_count || 0, track_count: u.track_count || 0,
+            avatar_url: artUrl(u.avatar_url), permalink_url: u.permalink_url,
+            verified: u.verified || false, description: u.description || null
+          };
+        });
+      });
+    } catch {}
+
+    if (!Object.keys(userMap).length) {
+      return res.status(500).json({ error: "Could not parse feed page" });
+    }
+
+    const artists = Object.values(userMap)
+      .sort((a, b) => b.followers_count - a.followers_count);
+
+    res.json({ author: "yazky", artists });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
