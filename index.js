@@ -534,20 +534,28 @@ app.get("/scdl", async (req, res) => {
   }
 });
 
-// ── GET /discover — Discover Feed ──
+
+
 app.get("/discover", async (req, res) => {
   try {
     const response = await axios.get("https://m.soundcloud.com/discover", {
-      headers: { "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) AppleWebKit/605.1.15" }
+      headers: {
+        "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.0 Mobile/15E148 Safari/604.1"
+      }
     });
 
     const $ = cheerio.load(response.data);
     const rawJson = $("script#__NEXT_DATA__").html();
     if (!rawJson) return res.status(500).json({ error: "Could not parse discover page" });
 
-    const entities = JSON.parse(rawJson)?.props?.pageProps?.initialStoreState?.entities;
+    const parsedData = JSON.parse(rawJson);
+    const pageProps = parsedData?.props?.pageProps;
+    const initialStoreState = pageProps?.initialStoreState || {};
+    const entities = initialStoreState?.entities || {};
+
     const playlists = entities?.playlists || {};
     const users     = entities?.users     || {};
+    const tracks    = entities?.tracks    || {};
     const msc       = entities?.mixedSelectionsCollections || {};
 
     function resolvePlaylist(urn) {
@@ -588,13 +596,46 @@ app.get("/discover", async (req, res) => {
       };
     }
 
-    const sections = Object.values(msc).map(entry => {
-      const sel = entry?.data || entry;
-      const items = (sel?.collection || []).map(item => {
-        if (item.schema === "playlist") return { type: "playlist", ...resolvePlaylist(item.id) };
-        if (item.schema === "user")     return { type: "user",     ...resolveUser(item.id) };
-        return null;
+    function resolveTrack(urn) {
+      const entry = tracks[urn];
+      const t = entry?.data || entry;
+      if (!t) return null;
+      return {
+        id: t.id,
+        title: t.title,
+        playback_count: t.playback_count,
+        likes_count: t.likes_count,
+        duration_ms: t.duration,
+        duration: formatDuration(t.duration),
+        artwork_url: artUrl(t.artwork_url),
+        permalink_url: t.permalink_url,
+        genre: t.genre || null,
+        user: t.user ? {
+          id: t.user.id,
+          username: t.user.username,
+          avatar_url: artUrl(t.user.avatar_url),
+          permalink_url: t.user.permalink_url
+        } : null
+      };
+    }
+
+    function parseCollectionItems(collection) {
+      if (!Array.isArray(collection)) return [];
+      return collection.map(item => {
+        const schema = item.schema || item.type || item.kind;
+        const id = item.id || item.urn;
+
+        if (schema === "playlist" || item.title) return { type: "playlist", ...(resolvePlaylist(id) || item) };
+        if (schema === "user" || item.username) return { type: "user", ...(resolveUser(id) || item) };
+        if (schema === "track") return { type: "track", ...(resolveTrack(id) || item) };
+
+        return item;
       }).filter(Boolean);
+    }
+
+    let sections = Object.values(msc).map(entry => {
+      const sel = entry?.data || entry;
+      const items = parseCollectionItems(sel?.collection || sel?.items);
 
       return {
         title: sel.title,
@@ -603,12 +644,31 @@ app.get("/discover", async (req, res) => {
       };
     });
 
+    if (sections.length === 0 && pageProps?.hydratableData) {
+      const selections = pageProps.hydratableData.mixedSelections || pageProps.hydratableData.selections || [];
+      sections = selections.map(sel => ({
+        title: sel.title,
+        urn: sel.urn,
+        items: parseCollectionItems(sel.collection || sel.items)
+      }));
+    }
+
+    if (sections.length === 0 && pageProps?.selection) {
+      const mainSel = pageProps.selection;
+      sections = [{
+        title: mainSel.title || "Discover",
+        urn: mainSel.urn || null,
+        items: parseCollectionItems(mainSel.collection || mainSel.items)
+      }];
+    }
+
     res.json({ author: "yazky", sections });
 
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
+
 
 // ── GET /feed — Who to follow ──
 app.get("/feed", async (req, res) => {
