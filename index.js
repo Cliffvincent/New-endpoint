@@ -856,6 +856,7 @@ app.get("/suggestions", async (req, res) => {
     }
 
     const limit = req.query.limit || "5";
+   const clientId = await getSoundCloudClientId();
 
     const targetUrl = `https://api-mobi.soundcloud.com/search/queries?q=${encodeURIComponent(query)}&limit=${encodeURIComponent(limit)}&client_id=${encodeURIComponent(clientId)}&stage=`;
 
