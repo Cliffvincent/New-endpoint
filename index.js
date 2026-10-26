@@ -559,6 +559,45 @@ app.get("/discover", async (req, res) => {
     const sysPlaylists = entities?.systemPlaylists || {};
     const msc       = entities?.mixedSelectionsCollections || {};
 
+    for (const [key, sysPl] of Object.entries(sysPlaylists)) {
+      const p = sysPl?.data || sysPl;
+      if (p && typeof p.id === 'string' && p.id.includes('trending-by-genre:')) {
+        const genreName = p.id.split(':').pop();
+        const setUrl = `https://m.soundcloud.com/discover/sets/trending-by-genre:${genreName}`;
+        try {
+          const setRes = await axios.get(setUrl, {
+            headers: {
+              "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.0 Mobile/15E148 Safari/604.1"
+            }
+          });
+          const $set = cheerio.load(setRes.data);
+          const setJson = $set("script#__NEXT_DATA__").html();
+          if (setJson) {
+            const setParsed = JSON.parse(setJson);
+            const setEntities = setParsed?.props?.pageProps?.initialStoreState?.entities || {};
+            const setPlaylists = setEntities?.playlists || {};
+            const setTracks = setEntities?.tracks || {};
+            
+            Object.assign(tracks, setTracks);
+            Object.assign(playlists, setPlaylists);
+
+            for (const spKey of Object.keys(setPlaylists)) {
+              const spData = setPlaylists[spKey]?.data || setPlaylists[spKey];
+              if (spData) {
+                if (spData.artwork_url) p.artwork_url = spData.artwork_url;
+                if (spData.tracks) p.tracks = spData.tracks;
+              }
+            }
+
+            if (!p.artwork_url && p.tracks && p.tracks.length > 0) {
+              const firstT = setTracks[p.tracks[0]]?.data || setTracks[p.tracks[0]];
+              if (firstT?.artwork_url) p.artwork_url = firstT.artwork_url;
+            }
+          }
+        } catch (e) {}
+      }
+    }
+
     function resolvePlaylist(urn) {
       const entry = playlists[urn] || sysPlaylists[urn];
       const p = entry?.data || entry;
