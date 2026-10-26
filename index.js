@@ -536,6 +536,7 @@ app.get("/scdl", async (req, res) => {
 
 
 
+
 app.get("/discover", async (req, res) => {
   try {
     const response = await axios.get("https://m.soundcloud.com/discover", {
@@ -556,21 +557,40 @@ app.get("/discover", async (req, res) => {
     const playlists = entities?.playlists || {};
     const users     = entities?.users     || {};
     const tracks    = entities?.tracks    || {};
+    const sysPlaylists = entities?.systemPlaylists || {};
     const msc       = entities?.mixedSelectionsCollections || {};
 
     function resolvePlaylist(urn) {
-      const entry = playlists[urn];
+      const entry = playlists[urn] || sysPlaylists[urn];
       const p = entry?.data || entry;
       if (!p) return null;
+
+      let pUrl = p.permalink_url;
+      if (!pUrl && p.id) {
+        const genreName = typeof p.id === 'string' ? p.id.split(':').pop() : '';
+        pUrl = genreName ? `https://soundcloud.com/tag/${genreName}` : null;
+      }
+
+      // Hanapin ang image mula sa p.artwork_url, p.avatar_url, o kaya sa mga tracks kung meron man silang collection
+      let artwork = p.artwork_url || p.avatar_url;
+      if (!artwork && p.tracks && p.tracks.length > 0) {
+        const firstTrackId = p.tracks[0];
+        const trackEntry = tracks[firstTrackId];
+        const tData = trackEntry?.data || trackEntry;
+        if (tData?.artwork_url) {
+          artwork = tData.artwork_url;
+        }
+      }
+
       return {
         id: p.id,
-        title: p.title,
-        track_count: p.track_count,
-        likes_count: p.likes_count,
-        duration_ms: p.duration,
+        title: p.title || (typeof p.id === 'string' ? p.id.split(':').pop().toUpperCase() : 'Playlist'),
+        track_count: p.track_count || (p.tracks ? p.tracks.length : 0),
+        likes_count: p.likes_count || 0,
+        duration_ms: p.duration || 0,
         duration: formatDuration(p.duration),
-        artwork_url: artUrl(p.artwork_url),
-        permalink_url: p.permalink_url,
+        artwork_url: artUrl(artwork),
+        permalink_url: pUrl,
         genre: p.genre || null,
         user: p.user ? {
           id: p.user.id,
@@ -625,9 +645,15 @@ app.get("/discover", async (req, res) => {
         const schema = item.schema || item.type || item.kind;
         const id = item.id || item.urn;
 
-        if (schema === "playlist" || item.title) return { type: "playlist", ...(resolvePlaylist(id) || item) };
-        if (schema === "user" || item.username) return { type: "user", ...(resolveUser(id) || item) };
-        if (schema === "track") return { type: "track", ...(resolveTrack(id) || item) };
+        if (schema === "playlist" || schema === "system-playlist" || item.title || (typeof id === 'string' && id.includes('playlist'))) {
+          return { type: "playlist", ...(resolvePlaylist(id) || item) };
+        }
+        if (schema === "user" || item.username) {
+          return { type: "user", ...(resolveUser(id) || item) };
+        }
+        if (schema === "track") {
+          return { type: "track", ...(resolveTrack(id) || item) };
+        }
 
         return item;
       }).filter(Boolean);
@@ -669,6 +695,7 @@ app.get("/discover", async (req, res) => {
   }
 });
 
+       
 
 // ── GET /feed — Who to follow ──
 app.get("/feed", async (req, res) => {
