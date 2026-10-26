@@ -821,6 +821,31 @@ app.get("/feed", async (req, res) => {
   }
 });
 
+app.get("/suggestions", async (req, res) => {
+  try {
+    const query = req.query.q;
+    if (!query) {
+      return res.status(400).json({ error: "Missing query parameter 'q'" });
+    }
+
+    const limit = req.query.limit || "5";
+
+    const targetUrl = `https://api-mobi.soundcloud.com/search/queries?q=${encodeURIComponent(query)}&limit=${encodeURIComponent(limit)}&client_id=${encodeURIComponent(clientId)}&stage=`;
+
+    const response = await axios.get(targetUrl, {
+      headers: {
+        "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.0 Mobile/15E148 Safari/604.1"
+      }
+    });
+
+    res.json(response.data);
+
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
