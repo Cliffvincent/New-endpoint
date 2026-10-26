@@ -536,7 +536,6 @@ app.get("/scdl", async (req, res) => {
 
 
 
-
 app.get("/discover", async (req, res) => {
   try {
     const response = await axios.get("https://m.soundcloud.com/discover", {
@@ -566,12 +565,15 @@ app.get("/discover", async (req, res) => {
       if (!p) return null;
 
       let pUrl = p.permalink_url;
-      if (!pUrl && p.id) {
-        const genreName = typeof p.id === 'string' ? p.id.split(':').pop() : '';
+      let genreName = "";
+      if (typeof p.id === 'string' && p.id.includes('trending-by-genre:')) {
+        genreName = p.id.split(':').pop();
+        pUrl = `https://m.soundcloud.com/discover/sets/trending-by-genre:${genreName}`;
+      } else if (!pUrl && p.id) {
+        genreName = typeof p.id === 'string' ? p.id.split(':').pop() : '';
         pUrl = genreName ? `https://soundcloud.com/tag/${genreName}` : null;
       }
 
-      // Hanapin ang image mula sa p.artwork_url, p.avatar_url, o kaya sa mga tracks kung meron man silang collection
       let artwork = p.artwork_url || p.avatar_url;
       if (!artwork && p.tracks && p.tracks.length > 0) {
         const firstTrackId = p.tracks[0];
@@ -584,7 +586,7 @@ app.get("/discover", async (req, res) => {
 
       return {
         id: p.id,
-        title: p.title || (typeof p.id === 'string' ? p.id.split(':').pop().toUpperCase() : 'Playlist'),
+        title: p.title || (genreName ? genreName.toUpperCase() : 'Playlist'),
         track_count: p.track_count || (p.tracks ? p.tracks.length : 0),
         likes_count: p.likes_count || 0,
         duration_ms: p.duration || 0,
@@ -695,7 +697,7 @@ app.get("/discover", async (req, res) => {
   }
 });
 
-       
+
 
 // ── GET /feed — Who to follow ──
 app.get("/feed", async (req, res) => {
