@@ -543,7 +543,7 @@
 
     async function loadDiscover() {
       try {
-        const res = await fetch('/discover');
+        const res = await fetch('https://yazzk-soundcloud.vercel.app/discover');
         const data = await res.json();
         renderDiscover(data.sections || []);
       } catch {
@@ -640,7 +640,7 @@
 
     async function loadFeed() {
       try {
-        const res = await fetch('/feed');
+        const res = await fetch('https://yazzk-soundcloud.vercel.app/feed');
         const data = await res.json();
         renderFeed(data.artists || []);
       } catch {
@@ -1053,7 +1053,7 @@
 
       try {
         const isId = /^\d+$/.test(String(url));
-        const res = await fetch(isId ? '/playlist?id=' + encodeURIComponent(url) : '/scdl?url=' + encodeURIComponent(url));
+        const res = await fetch(isId ? '/playlist?id=' + encodeURIComponent(url) : 'https://yazzk-soundcloud.vercel.app/scdl?url=' + encodeURIComponent(url));
         const data = await res.json();
         const results = data.results || data;
         if (isId) {
