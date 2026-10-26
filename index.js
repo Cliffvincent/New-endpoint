@@ -224,17 +224,35 @@ async function normalizeSoundCloudUrl(rawUrl) {
 
 async function resolveAudioUrl(transcodings, clientId) {
   const progressive = transcodings.find(
-    t => t.format?.protocol === "progressive" && t.format?.mime_type === "audio/mpeg"
-  );
-  if (!progressive?.url) return null;
+    t => t.format?.protocol === "progressive" && t.format?.mime_type?.includes("audio")
+  ) || transcodings.find(t => t.format?.protocol === "progressive");
+  
+  if (!progressive?.url) {
+    const hls = transcodings.find(t => t.format?.protocol === "hls");
+    if (hls?.url) {
+      try {
+        const r = await axios.get(hls.url, {
+          params: { client_id: clientId },
+          headers: { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36" }
+        });
+        return r.data?.url || hls.url;
+      } catch { return hls.url; }
+    }
+    return null;
+  }
+  
   try {
-    const r = await axios.get(progressive.url, {
-      params: { client_id: clientId },
+    const separator = progressive.url.includes("?") ? "&" : "?";
+    const finalUrl = `${progressive.url}${separator}client_id=${clientId}`;
+    const r = await axios.get(finalUrl, {
       headers: { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36" }
     });
-    return r.data?.url || null;
-  } catch { return null; }
+    return r.data?.url || finalUrl;
+  } catch { 
+    return `${progressive.url}${progressive.url.includes("?") ? "&" : "?"}client_id=${clientId}`; 
+  }
 }
+
 
 function formatTrack(track, audioUrl) {
   const transcodings = track.media?.transcodings || [];
