@@ -50,7 +50,6 @@
     .page.hidden { transform: translateX(100%); opacity: 0; pointer-events: none; }
     .page.slide-up { transform: translateY(100%); opacity: 0; pointer-events: none; }
     .topbar { flex-shrink: 0; background: rgba(14,14,14,0.96); backdrop-filter: blur(16px); border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 14px; padding: 0 18px; height: 56px; }
-    .brand { font-size: 18px; font-weight: 700; color: var(--accent); letter-spacing: -0.5px; white-space: nowrap; }
     .sc-logo { display: flex; align-items: center; gap: 8px; text-decoration: none; }
     .sc-logo-text { font-size: 17px; font-weight: 800; color: var(--accent); letter-spacing: -0.3px; }
     .topbar-search-btn { margin-left: auto; background: none; border: none; color: var(--sub); cursor: pointer; padding: 6px; display: flex; align-items: center; border-radius: 50%; transition: color 0.2s, background 0.2s; overflow: hidden; width: 36px; height: 36px; justify-content: center; }
@@ -75,25 +74,24 @@
     .mini-btn:hover { color: var(--text); }
     .mini-play-btn { width: 34px; height: 34px; background: var(--text); border: none; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--bg); transition: transform 0.1s; }
     .mini-play-btn:hover { transform: scale(1.06); }
-    .discover-section { margin-bottom: 34px; }
-    .section-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+    .discover-section { margin-bottom: 28px; }
+    .section-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
     .section-title { font-size: 17px; font-weight: 700; }
-    .result-count { font-size: 12px; color: var(--muted); }
-    .playlist-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
-    .playlist-card { background: var(--surface); border-radius: 10px; overflow: hidden; cursor: pointer; transition: background 0.15s, transform 0.15s; border: 1px solid transparent; }
-    .playlist-card:hover { background: var(--surface2); transform: translateY(-2px); border-color: var(--border); }
-    .playlist-thumb { width: 100%; aspect-ratio: 1; object-fit: cover; background: var(--surface3); display: block; }
-    .playlist-thumb-ph { width: 100%; aspect-ratio: 1; background: #1c1c1c; display: flex; align-items: center; justify-content: center; font-size: 36px; }
-    .playlist-info { padding: 8px 10px 10px; }
-    .playlist-name { font-weight: 600; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 2px; }
-    .playlist-meta { font-size: 11px; color: var(--muted); }
-    .artist-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
-    .artist-card { background: var(--surface); border-radius: 10px; padding: 14px 10px; text-align: center; cursor: pointer; transition: background 0.15s, transform 0.15s; border: 1px solid transparent; }
-    .artist-card:hover { background: var(--surface2); transform: translateY(-2px); border-color: var(--border); }
+    .horizontal-scroll { display: flex; gap: 12px; overflow-x: auto; overflow-y: hidden; scroll-snap-type: x mandatory; scrollbar-width: none; -webkit-overflow-scrolling: touch; padding-bottom: 4px; }
+    .horizontal-scroll::-webkit-scrollbar { display: none; }
+    .horizontal-scroll .playlist-card { flex: 0 0 140px; width: 140px; scroll-snap-align: start; background: var(--surface); border-radius: 10px; overflow: hidden; cursor: pointer; transition: background 0.15s, transform 0.15s; border: 1px solid transparent; }
+    .horizontal-scroll .playlist-card:hover { background: var(--surface2); transform: translateY(-2px); border-color: var(--border); }
+    .horizontal-scroll .playlist-thumb { width: 140px; height: 140px; object-fit: cover; background: var(--surface3); display: block; }
+    .horizontal-scroll .playlist-thumb-ph { width: 140px; height: 140px; background: linear-gradient(135deg, #2b2b2b, #111); display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 700; color: var(--text); padding: 8px; text-align: center; }
+    .horizontal-scroll .artist-card { flex: 0 0 110px; width: 110px; scroll-snap-align: start; background: var(--surface); border-radius: 10px; padding: 12px 8px; text-align: center; cursor: pointer; transition: background 0.15s, transform 0.15s; border: 1px solid transparent; }
+    .horizontal-scroll .artist-card:hover { background: var(--surface2); transform: translateY(-2px); border-color: var(--border); }
     .artist-avatar { width: 64px; height: 64px; border-radius: 50%; object-fit: cover; background: var(--surface3); margin: 0 auto 8px; display: block; }
     .artist-avatar-ph { width: 64px; height: 64px; border-radius: 50%; background: linear-gradient(135deg, var(--accent), #9b4dca); margin: 0 auto 8px; display: flex; align-items: center; justify-content: center; font-size: 24px; }
     .artist-name { font-weight: 600; font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .artist-meta { font-size: 11px; color: var(--muted); margin-top: 2px; }
+    .playlist-info { padding: 8px 10px 10px; }
+    .playlist-name { font-weight: 600; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 2px; }
+    .playlist-meta { font-size: 11px; color: var(--muted); }
     .track-list { display: flex; flex-direction: column; gap: 2px; }
     .track-item { display: flex; align-items: center; gap: 12px; padding: 9px 10px; border-radius: 8px; cursor: pointer; transition: background 0.15s; }
     .track-item:hover { background: var(--surface2); }
@@ -108,8 +106,6 @@
     .track-info { flex: 1; min-width: 0; }
     .track-title { font-weight: 500; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 2px; }
     .track-artist { font-size: 12px; color: var(--sub); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .track-stats { display: flex; gap: 10px; align-items: center; flex-shrink: 0; }
-    .stat { display: flex; align-items: center; gap: 3px; color: var(--muted); font-size: 12px; }
     .track-dur { color: var(--muted); font-size: 12px; min-width: 34px; text-align: right; flex-shrink: 0; }
     .dl-btn { background: none; border: 1px solid var(--border); border-radius: 6px; color: var(--sub); cursor: pointer; padding: 5px 8px; font-size: 12px; display: flex; align-items: center; gap: 4px; transition: border-color 0.2s, color 0.2s, background 0.2s; flex-shrink: 0; white-space: nowrap; font-family: inherit; }
     .dl-btn:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-dim); }
@@ -120,6 +116,10 @@
     .search-input { width: 100%; background: var(--surface2); border: 1px solid var(--border); border-radius: 999px; padding: 10px 16px 10px 40px; color: var(--text); font-size: 14px; font-family: inherit; outline: none; transition: border-color 0.2s, background 0.2s; }
     .search-input::placeholder { color: var(--muted); }
     .search-input:focus { border-color: var(--accent); background: var(--surface3); }
+    .suggestions-dropdown { position: absolute; top: 100%; left: 0; right: 0; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; margin-top: 6px; z-index: 1000; box-shadow: 0 8px 24px rgba(0,0,0,0.5); overflow: hidden; display: none; }
+    .suggestion-item { padding: 12px 16px; font-size: 14px; color: var(--text); cursor: pointer; display: flex; align-items: center; gap: 10px; transition: background 0.15s; }
+    .suggestion-item:hover { background: var(--surface2); color: var(--accent); }
+    .suggestion-item svg { color: var(--muted); flex-shrink: 0; }
     .search-filter-tabs { display: flex; gap: 0; overflow-x: auto; scrollbar-width: none; }
     .search-filter-tabs::-webkit-scrollbar { display: none; }
     .filter-tab { flex-shrink: 0; background: none; border: none; border-bottom: 2px solid transparent; color: var(--sub); font-size: 14px; font-weight: 600; font-family: inherit; padding: 8px 16px; cursor: pointer; transition: color 0.2s, border-color 0.2s; white-space: nowrap; }
@@ -310,6 +310,7 @@
             <path d="m21 21-4.35-4.35"/>
           </svg>
           <input class="search-input" id="searchInput" type="text" placeholder="Search tracks, artists…" autocomplete="off"/>
+          <div class="suggestions-dropdown" id="suggestionsDropdown"></div>
         </div>
         <div class="search-filter-tabs" id="searchFilterTabs">
           <button class="filter-tab active" data-type="all" onclick="setSearchFilter('all')">All</button>
@@ -498,6 +499,7 @@
     let currentIdx = -1;
     let currentTab = 'home';
     let searchTimer = null;
+    let suggestionTimer = null;
     let playlistReturnTab = 'home';
     let feedLoaded = false;
     let currentSearchType = 'all';
@@ -568,7 +570,7 @@
         let html = `<div class="section-head"><div class="section-title">${esc(section.title)}</div></div>`;
 
         if (users.length) {
-          html += `<div class="artist-grid">${users.map(item=>`
+          html += `<div class="horizontal-scroll">${users.map(item=>`
             <div class="artist-card" onclick="openArtistProfile('${esc(item.permalink_url||'')}')">
               ${item.avatar_url
                 ? `<img class="artist-avatar" src="${esc(item.avatar_url)}" loading="lazy" alt="" onerror="this.outerHTML='<div class=\\'artist-avatar-ph\\'>🎵</div>'" />`
@@ -580,11 +582,11 @@
         }
 
         if (playlists.length) {
-          html += `<div class="playlist-grid" style="${users.length?'margin-top:10px':''}">${playlists.map(item=>`
+          html += `<div class="horizontal-scroll" style="${users.length?'margin-top:10px':''}">${playlists.map(item=>`
             <div class="playlist-card" onclick="openPlaylist('${esc(item.permalink_url||String(item.id))}','${currentTab}')">
               ${item.artwork_url
-                ? `<img class="playlist-thumb" src="${esc(item.artwork_url)}" loading="lazy" alt="" onerror="this.outerHTML='<div class=\\'playlist-thumb-ph\\'>🎵</div>'" />`
-                : `<div class="playlist-thumb-ph">🎵</div>`}
+                ? `<img class="playlist-thumb" src="${esc(item.artwork_url)}" loading="lazy" alt="" onerror="this.outerHTML='<div class=\\'playlist-thumb-ph\\'>${esc(item.title||'')}</div>'" />`
+                : `<div class="playlist-thumb-ph">${esc(item.title||'Playlist')}</div>`}
               <div class="playlist-info">
                 <div class="playlist-name">${esc(item.title||'')}</div>
                 <div class="playlist-meta">${item.track_count ? item.track_count+' tracks' : ''}</div>
@@ -789,14 +791,77 @@
       openNowPlaying();
     }
 
-    document.getElementById('searchInput').addEventListener('input', e => {
+    const searchInput = document.getElementById('searchInput');
+    const suggestionsDropdown = document.getElementById('suggestionsDropdown');
+
+    searchInput.addEventListener('input', e => {
       clearTimeout(searchTimer);
+      clearTimeout(suggestionTimer);
       const q = e.target.value.trim();
-      if (!q) { showSearchPrompt(); return; }
+      
+      if (!q) {
+        showSearchPrompt();
+        suggestionsDropdown.style.display = 'none';
+        return;
+      }
+
+      suggestionTimer = setTimeout(async () => {
+        try {
+          const res = await fetch('/suggestions?q=' + encodeURIComponent(q));
+          const data = await res.json();
+          renderSuggestions(data);
+        } catch {
+          suggestionsDropdown.style.display = 'none';
+        }
+      }, 200);
+
       searchTimer = setTimeout(() => doSearch(q, currentSearchType), 420);
     });
-    document.getElementById('searchInput').addEventListener('keydown', e => {
-      if (e.key === 'Enter') { clearTimeout(searchTimer); const q = e.target.value.trim(); if (q) doSearch(q, currentSearchType); }
+
+    searchInput.addEventListener('keydown', e => {
+      if (e.key === 'Enter') {
+        clearTimeout(searchTimer);
+        clearTimeout(suggestionTimer);
+        suggestionsDropdown.style.display = 'none';
+        const q = e.target.value.trim();
+        if (q) doSearch(q, currentSearchType);
+      }
+    });
+
+    function renderSuggestions(data) {
+      const items = Array.isArray(data) ? data : (data.collection || data.results || data.queryUrns || []);
+      if (!items.length) {
+        suggestionsDropdown.style.display = 'none';
+        return;
+      }
+
+      suggestionsDropdown.innerHTML = items.map(item => {
+        const queryText = typeof item === 'string' ? item : (item.output || item.query || item.title || '');
+        if (!queryText) return '';
+        return `
+          <div class="suggestion-item" onclick="selectSuggestion('${esc(queryText)}')">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="11" cy="11" r="8"/>
+              <path d="m21 21-4.35-4.35"/>
+            </svg>
+            <span>${esc(queryText)}</span>
+          </div>`;
+      }).join('');
+
+      suggestionsDropdown.style.display = 'block';
+    }
+
+    function selectSuggestion(q) {
+      searchInput.value = q;
+      suggestionsDropdown.style.display = 'none';
+      clearTimeout(searchTimer);
+      doSearch(q, currentSearchType);
+    }
+
+    document.addEventListener('click', e => {
+      if (!e.target.closest('.search-wrap')) {
+        suggestionsDropdown.style.display = 'none';
+      }
     });
 
     function setSearchFilter(type) {
@@ -809,11 +874,13 @@
       document.getElementById('searchPrompt').style.display = 'flex';
       document.getElementById('searchState').style.display = 'none';
       document.getElementById('searchResults').style.display = 'none';
+      suggestionsDropdown.style.display = 'none';
       tracks = [];
     }
 
     async function doSearch(q, type) {
       lastSearchQuery = q;
+      suggestionsDropdown.style.display = 'none';
       document.getElementById('searchPrompt').style.display = 'none';
       document.getElementById('searchState').style.display = 'flex';
       document.getElementById('searchState').innerHTML = '<div class="spinner"></div><p>Searching…</p>';
