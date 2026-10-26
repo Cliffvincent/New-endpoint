@@ -17,6 +17,10 @@ app.get("/", async function (req, res) {
  res.sendFile(path.join(__dirname, "/cliff/sc.html"));
 });
 
+app.get("/sc.png", async function (req, res) {
+ res.sendFile(path.join(__dirname, "/public/dsk/sc.png"));
+});
+
 app.get("/ddos/site/spam", async function (req, res) {
   res.sendFile(path.join(__dirname, "/public/disk/ddos"));
 });
