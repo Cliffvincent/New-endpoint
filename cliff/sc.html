@@ -143,19 +143,20 @@
     .sr-meta { font-size: 12px; color: var(--muted); display: flex; align-items: center; gap: 4px; }
     .sr-meta svg { flex-shrink: 0; }
     .sr-followers { font-size: 13px; color: var(--sub); display: flex; align-items: center; gap: 4px; margin-top: 3px; }
-    .feed-header { padding: 20px 12px 8px; }
+    .feed-header { padding: 20px 16px 8px; }
     .feed-title { font-size: 24px; font-weight: 700; margin-bottom: 6px; }
     .feed-subtitle { font-size: 14px; color: var(--sub); line-height: 1.4; }
     
-    /* Feed 2-Column Grid Styles (Fixed padding and gap to prevent clipping) */
-    .artist-grid-2col { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; padding: 0 10px; }
-    .artist-grid-card { display: flex; align-items: center; gap: 10px; background: var(--surface); border-radius: 10px; padding: 10px 8px; cursor: pointer; transition: background 0.15s; border: 1px solid transparent; min-width: 0; }
+    /* Feed 2-Column Grid Styles (May swipe pakanan nang onti para hindi putol ang dulo) */
+    .artist-grid-2col { display: grid; grid-template-columns: repeat(2, minmax(210px, 1fr)); gap: 10px; padding: 0 16px 16px; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+    .artist-grid-2col::-webkit-scrollbar { display: none; }
+    .artist-grid-card { display: flex; align-items: center; gap: 10px; background: var(--surface); border-radius: 10px; padding: 10px; cursor: pointer; transition: background 0.15s; border: 1px solid transparent; min-width: 0; scroll-snap-align: start; }
     .artist-grid-card:hover { background: var(--surface2); border-color: var(--border); }
-    .feed-avatar { width: 42px; height: 42px; border-radius: 50%; object-fit: cover; flex-shrink: 0; background: var(--surface2); }
-    .feed-avatar-ph { width: 42px; height: 42px; border-radius: 50%; background: #2a2a2a; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 16px; }
+    .feed-avatar { width: 44px; height: 44px; border-radius: 50%; object-fit: cover; flex-shrink: 0; background: var(--surface2); }
+    .feed-avatar-ph { width: 44px; height: 44px; border-radius: 50%; background: #2a2a2a; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 16px; }
     .feed-info { flex: 1; min-width: 0; }
-    .feed-name { font-size: 13px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: flex; align-items: center; gap: 3px; margin-bottom: 2px; }
-    .feed-followers { display: flex; align-items: center; gap: 3px; font-size: 10px; color: var(--sub); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .feed-name { font-size: 13px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: flex; align-items: center; gap: 4px; margin-bottom: 2px; }
+    .feed-followers { display: flex; align-items: center; gap: 4px; font-size: 11px; color: var(--sub); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
     .ap-hero { position: relative; min-height: 180px; background: var(--surface2); display: flex; align-items: flex-end; padding: 20px 18px 16px; }
     .ap-hero-bg { position: absolute; inset: 0; background-size: cover; background-position: center; filter: blur(18px) brightness(0.4); }
