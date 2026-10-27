@@ -911,13 +911,19 @@
     }
 
     function srUserHTML(u) {
-      return `
+  return `
         <div class="sr-item" onclick="openArtistProfile('${esc(u.permalink_url||'')}')">
           ${u.avatar_url
             ? `<img class="sr-avatar" src="${esc(u.avatar_url)}" loading="lazy" alt="" onerror="this.outerHTML='<div class=\\'sr-avatar-ph\\'>👤</div>'">`
             : `<div class="sr-avatar-ph">👤</div>`}
           <div class="sr-info">
-            <div class="sr-title">${esc(u.username||'')}</div>
+            <div class="sr-title">${esc(u.username||'')}
+              ${u.verified ? `
+                <svg data-testid="verified-badge" width="14" height="14" class="UserCell_Badge__1QjSo" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                  <path fill="#1DA1F2" d="M13.54 5.7c.1.22.34.48.58.72.41.44.88.93.88 1.58s-.47 1.14-.88 1.57c-.24.25-.5.52-.58.72-.08.21-.08.55-.09.88 0 .6-.02 1.3-.5 1.78s-1.17.5-1.78.5h-.1c-.3 0-.58.01-.78.1-.21.09-.47.33-.71.57-.44.41-.93.88-1.58.88s-1.14-.47-1.58-.88c-.24-.24-.5-.5-.71-.58-.21-.08-.55-.08-.88-.09-.6 0-1.3-.02-1.78-.5s-.5-1.17-.5-1.78v-.1c0-.3-.01-.58-.1-.78-.09-.21-.33-.47-.57-.71C1.47 9.13 1 8.64 1 8s.47-1.14.88-1.58c.24-.24.5-.5.58-.71.08-.21.08-.55.09-.88 0-.6.02-1.3.5-1.78s1.17-.5 1.78-.5h.1c.3 0 .58-.01.78-.1.21-.09.47-.33.71-.57C6.87 1.47 7.35 1 8 1s1.14.47 1.57.88c.25.24.52.5.72.58.21.08.55.08.88.09.6 0 1.3.02 1.78.5s.5 1.17.5 1.78v.1c0 .3.01.58.1.78Zm-5.76 4.83 4.03-4.03-1.06-1.06-3.5 3.5-2-2L4.19 8l2.53 2.53c.3.3.77.3 1.06 0Z"></path>
+                </svg>
+              ` : ''}
+            </div>
             <div class="sr-followers">
               <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor" style="opacity:.5">
                 <path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5z"/>
@@ -927,7 +933,7 @@
             </div>
           </div>
         </div>`;
-    }
+}
 
     function srPlaylistHTML(p) {
       const meta = [p.track_count ? p.track_count+' tracks' : null, timeAgo(p.created_at)||null].filter(Boolean).join(' · ');
@@ -1042,67 +1048,72 @@
     }
 
     function renderPlaylistPage(pl) {
-      const ownerName = pl.user?.username || '';
-      tracks = (pl.tracks || []).map(t => ({
-        id: t.id,
-        title: t.title || '',
-        duration: t.duration,
-        artwork_url: t.artwork_url || pl.artwork_url,
-        permalink_url: t.permalink_url,
-        user: { username: t.user?.username || ownerName },
-        playback_count: t.playback_count || 0,
-        likes_count: t.likes_count || 0,
-        comment_count: t.comment_count || 0
-      }));
-      currentContext = 'playlist';
+const ownerName = pl.user?.username || '';
+tracks = (pl.tracks || []).map(t => ({
+id: t.id,
+title: t.title || '',
+duration: t.duration,
+artwork_url: t.artwork_url || pl.artwork_url,
+permalink_url: t.permalink_url,
+user: { username: t.user?.username || ownerName },
+playback_count: t.playback_count || 0,
+likes_count: t.likes_count || 0,
+comment_count: t.comment_count || 0
+}));
+currentContext = 'playlist';
 
-      const date = pl.created_at ? new Date(pl.created_at).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}) : '';
-      const body = document.getElementById('playlistPageBody');
-      body.innerHTML = `
-        <div style="position:relative">
-          <div class="pl-hero">
-            ${pl.artwork_url ? `<img class="pl-hero-img" src="${esc(pl.artwork_url)}" alt="" />` : `<div class="pl-hero-ph">🎵</div>`}
-            <div class="pl-hero-grad"></div>
-          </div>
-          <div class="pl-info">
-            <div class="pl-title">${esc(pl.title||'Playlist')}</div>
-            <div class="pl-curator">
-              ${esc(ownerName)}
-            </div>
-            <div class="pl-meta-row">Playlist &nbsp;·&nbsp; ${pl.duration||''} &nbsp;·&nbsp; ${pl.track_count||tracks.length} Tracks${date?' &nbsp;·&nbsp; '+date:''}</div>
-            <div class="pl-actions">
-              <button class="pl-action-btn">
-                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
-                </svg>
-                ${fmtNum(pl.likes_count)}
-              </button>
-              <button class="pl-action-btn">
-                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <polyline points="17 1 21 5 17 9"/>
-                  <path d="M3 11V9a4 4 0 0 1 4-4h14"/>
-                  <polyline points="7 23 3 19 7 15"/>
-                  <path d="M21 13v2a4 4 0 0 1-4 4H3"/>
-                </svg>
-                ${fmtNum(pl.reposts_count||0)}
-              </button>
-              <button class="pl-action-btn">
-                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/>
-                  <polyline points="16 6 12 2 8 6"/>
-                  <line x1="12" y1="2" x2="12" y2="15"/>
-                </svg>
-              </button>
-              <button class="pl-shuffle-btn" onclick="shufflePlay()">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                  <polyline points="16 3 21 3 21 8"/>
-                  <line x1="4" y1="20" x2="21" y2="3"/>
-                  <polyline points="21 16 21 21 16 21"/>
-                  <line x1="15" y1="15" x2="21" y2="21"/>
-                </svg>
-              </button>
-            </div>
-          </div>
+const date = pl.created_at ? new Date(pl.created_at).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}) : '';
+const body = document.getElementById('playlistPageBody');
+body.innerHTML = `
+<div style="position:relative">
+  <div class="pl-hero">
+    ${pl.artwork_url ? `<img class="pl-hero-img" src="${esc(pl.artwork_url)}" alt="" />` : `<div class="pl-hero-ph">🎵</div>`}
+    <div class="pl-hero-grad"></div>
+  </div>
+  <div class="pl-info">
+    <div class="pl-title">${esc(pl.title||'Playlist')}</div>
+    <div class="pl-curator">
+      ${esc(ownerName)}
+      ${pl.user?.verified ? `
+      <svg data-testid="verified-badge" width="12" height="12" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" style="vertical-align: middle; margin-left: 4px;">
+        <path fill="#1DA1F2" d="M13.54 5.7c.1.22.34.48.58.72.41.44.88.93.88 1.58s-.47 1.14-.88 1.57c-.24.25-.5.52-.58.72-.08.21-.08.55-.09.88 0 .6-.02 1.3-.5 1.78s-1.17.5-1.78.5h-.1c-.3 0-.58.01-.78.1-.21.09-.47.33-.71.57-.44.41-.93.88-1.58.88s-1.14-.47-1.58-.88c-.24-.24-.5-.5-.71-.58-.21-.08-.55-.08-.88-.09-.6 0-1.3-.02-1.78-.5s-.5-1.17-.5-1.78v-.1c0-.3-.01-.58-.1-.78-.09-.21-.33-.47-.57-.71C1.47 9.13 1 8.64 1 8s.47-1.14.88-1.58c.24-.24.5-.5.58-.71.08-.21.08-.55.09-.88 0-.6.02-1.3.5-1.78s1.17-.5 1.78-.5h.1c.3 0 .58-.01.78-.1.21-.09.47-.33.71-.57C6.87 1.47 7.35 1 8 1s1.14.47 1.57.88c.25.24.52.5.72.58.21.08.55.08.88.09.6 0 1.3.02 1.78.5s.5 1.17.5 1.78v.1c0 .3.01.58.1.78Zm-5.76 4.83 4.03-4.03-1.06-1.06-3.5 3.5-2-2L4.19 8l2.53 2.53c.3.3.77.3 1.06 0Z"></path>
+      </svg>
+      ` : ''}
+    </div>
+    <div class="pl-meta-row">Playlist &nbsp;·&nbsp; ${pl.duration||''} &nbsp;·&nbsp; ${pl.track_count||tracks.length} Tracks${date?' &nbsp;·&nbsp; '+date:''}</div>
+    <div class="pl-actions">
+      <button class="pl-action-btn">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+        </svg>
+        ${fmtNum(pl.likes_count)}
+      </button>
+      <button class="pl-action-btn">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="17 1 21 5 17 9" />
+          <path d="M3 11V9a4 4 0 0 1 4-4h14" />
+          <polyline points="7 23 3 19 7 15" />
+          <path d="M21 13v2a4 4 0 0 1-4 4H3" />
+        </svg>
+        ${fmtNum(pl.reposts_count||0)}
+      </button>
+      <button class="pl-action-btn">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" />
+          <polyline points="16 6 12 2 8 6" />
+          <line x1="12" y1="2" x2="12" y2="15" />
+        </svg>
+      </button>
+      <button class="pl-shuffle-btn" onclick="shufflePlay()">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <polyline points="16 3 21 3 21 8" />
+          <line x1="4" y1="20" x2="21" y2="3" />
+          <polyline points="21 16 21 21 16 21" />
+          <line x1="15" y1="15" x2="21" y2="21" />
+        </svg>
+      </button>
+    </div>
+  </div>
           <div class="pl-track-list">
             ${tracks.map((t,i)=>`
               <div class="pl-track-item" id="pltItem${i}" onclick="playTrack(${i});openNowPlaying()">
