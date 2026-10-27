@@ -84,7 +84,7 @@
     .horizontal-scroll .playlist-card:hover { background: var(--surface2); transform: translateY(-2px); border-color: var(--border); }
     .horizontal-scroll .playlist-thumb { width: 140px; height: 140px; object-fit: cover; background: var(--surface3); display: block; }
     .horizontal-scroll .playlist-thumb-ph { width: 140px; height: 140px; background: linear-gradient(135deg, #2b2b2b, #111); display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 700; color: var(--text); padding: 8px; text-align: center; }
-    .horizontal-scroll .artist-card { flex: 0 0 120px; width: 120px; scroll-snap-align: start; background: var(--surface); border-radius: 10px; padding: 12px 8px; text-align: center; cursor: pointer; transition: background 0.15s, transform 0.15s; border: 1px solid transparent; }
+    .horizontal-scroll .artist-card { flex: 0 0 160px; width: 160px; scroll-snap-align: start; background: var(--surface); border-radius: 10px; padding: 12px 8px; text-align: center; cursor: pointer; transition: background 0.15s, transform 0.15s; border: 1px solid transparent; }
     .horizontal-scroll .artist-card:hover { background: var(--surface2); transform: translateY(-2px); border-color: var(--border); }
     .artist-avatar { width: 64px; height: 64px; border-radius: 50%; object-fit: cover; background: var(--surface3); margin: 0 auto 8px; display: block; }
     .artist-avatar-ph { width: 64px; height: 64px; border-radius: 50%; background: linear-gradient(135deg, var(--accent), #9b4dca); margin: 0 auto 8px; display: flex; align-items: center; justify-content: center; font-size: 24px; }
@@ -156,28 +156,6 @@
     .ap-stats { font-size: 12px; color: var(--sub); display: flex; gap: 12px; }
     .ap-desc { padding: 14px 18px; font-size: 13px; color: var(--sub); line-height: 1.55; border-bottom: 1px solid var(--border); }
     .ap-section-head { padding: 16px 18px 10px; font-size: 16px; font-weight: 700; }
-    
-    /* Inayos dito para sa dalawang column pababa at pwedeng i-swipe pakanan */
-    .ap-scroll-grid {
-      display: flex;
-      flex-direction: column;
-      grid-template-rows: repeat(2, auto);
-      grid-auto-flow: column;
-      gap: 10px;
-      overflow-x: auto;
-      overflow-y: hidden;
-      scroll-snap-type: x mandatory;
-      scrollbar-width: none;
-      -webkit-overflow-scrolling: touch;
-      padding: 0 14px 14px;
-    }
-    .ap-scroll-grid::-webkit-scrollbar { display: none; }
-    .ap-scroll-grid > * {
-      scroll-snap-align: start;
-      flex: 0 0 calc(50% - 5px);
-      width: calc(50% - 5px);
-    }
-    
     .ap-playlist-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; padding: 0 14px 14px; }
     .ap-tracks-list { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; padding: 0 14px 16px; }
     .ap-track-card { background: var(--surface); border-radius: 8px; overflow: hidden; cursor: pointer; padding: 8px; display: flex; flex-direction: column; gap: 6px; transition: background 0.15s; }
@@ -186,6 +164,9 @@
     .feed-info { flex: 1; min-width: 0; }
     .feed-name { font-size: 12px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: flex; align-items: center; justify-content: center; gap: 3px; margin-bottom: 2px; }
     .feed-followers { display: flex; align-items: center; justify-content: center; gap: 4px; font-size: 11px; color: var(--sub); }
+    .swipe-grid-container { display: flex; gap: 12px; overflow-x: auto; overflow-y: hidden; scroll-snap-type: x mandatory; scrollbar-width: none; -webkit-overflow-scrolling: touch; padding: 0 14px 4px; }
+    .swipe-grid-container::-webkit-scrollbar { display: none; }
+    .swipe-grid-column { display: flex; flex-direction: column; gap: 10px; flex: 0 0 calc(50% - 6px); scroll-snap-align: start; }
     .state-box { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 60px 20px; color: var(--muted); text-align: center; gap: 12px; }
     .state-box svg { opacity: 0.3; }
     .state-box p { font-size: 15px; }
@@ -587,32 +568,48 @@
         let html = `<div class="section-head"><div class="section-title">${esc(section.title)}</div></div>`;
 
         if (users.length) {
-          html += `<div class="horizontal-scroll">${users.map(item=>`
-            <div class="artist-card" onclick="openArtistProfile('${esc(item.permalink_url||'')}')">
-              ${item.avatar_url
-                ? `<img class="artist-avatar" src="${esc(item.avatar_url)}" loading="lazy" alt="" onerror="this.outerHTML='<div class=\\'artist-avatar-ph\\'>🎵</div>'" />`
-                : `<div class="artist-avatar-ph">🎵</div>`}
-              <div class="artist-name">
-                <span>${esc(item.username||'')}</span>
-                ${item.verified ? `<svg width="12" height="12" viewBox="0 0 16 16" fill="none" style="flex-shrink:0"><path fill="#1DA1F2" d="M13.54 5.7c.1.22.34.48.58.72.41.44.88.93.88 1.58s-.47 1.14-.88 1.57c-.24.25-.5.52-.58.72-.08.21-.08.55-.09.88 0 .6-.02 1.3-.5 1.78s-1.17.5-1.78.5h-.1c-.3 0-.58.01-.78.1-.21.09-.47.33-.71.57-.44.41-.93.88-1.58.88s-1.14-.47-1.58-.88c-.24-.24-.5-.5-.71-.58-.21-.08-.55-.08-.88-.09-.6 0-1.3-.02-1.78-.5s-.5-1.17-.5-1.78v-.1c0-.3-.01-.58-.1-.78-.09-.21-.33-.47-.57-.71C1.47 9.13 1 8.64 1 8s.47-1.14.88-1.58c.24-.24.5-.5.58-.71.08-.21.08-.55.09-.88 0-.6.02-1.3.5-1.78s1.17-.5 1.78-.5h.1c.3 0 .58-.01.78-.1.21-.09.47-.33.71-.57C6.87 1.47 7.35 1 8 1s1.14.47 1.57.88c.25.24.52.5.72.58.21.08.55.08.88.09.6 0 1.3.02 1.78.5s.5 1.17.5 1.78v.1c0 .3.01.58.1.78Zm-5.76 4.83 4.03-4.03-1.06-1.06-3.5 3.5-2-2L4.19 8l2.53 2.53c.3.3.77.3 1.06 0Z"/></svg>` : ''}
-              </div>
-              ${item.followers_count?`<div class="artist-meta">${fmtNum(item.followers_count)} followers</div>`:''}
-            </div>`).join('')}
-          </div>`;
+          let chunks = [];
+          for (let i = 0; i < users.length; i += 2) {
+            chunks.push(users.slice(i, i + 2));
+          }
+          html += `<div class="swipe-grid-container">${chunks.map(chunk => `
+            <div class="swipe-grid-column">
+              ${chunk.map(item => `
+                <div class="artist-card" style="width:100%" onclick="openArtistProfile('${esc(item.permalink_url||'')}')">
+                  ${item.avatar_url
+                    ? `<img class="artist-avatar" src="${esc(item.avatar_url)}" loading="lazy" alt="" onerror="this.outerHTML='<div class=\\'artist-avatar-ph\\'>🎵</div>'" />`
+                    : `<div class="artist-avatar-ph">🎵</div>`}
+                  <div class="artist-name">
+                    <span>${esc(item.username||'')}</span>
+                    ${item.verified ? `<svg width="12" height="12" viewBox="0 0 16 16" fill="none" style="flex-shrink:0"><path fill="#1DA1F2" d="M13.54 5.7c.1.22.34.48.58.72.41.44.88.93.88 1.58s-.47 1.14-.88 1.57c-.24.25-.5.52-.58.72-.08.21-.08.55-.09.88 0 .6-.02 1.3-.5 1.78s-1.17.5-1.78.5h-.1c-.3 0-.58.01-.78.1-.21.09-.47.33-.71.57-.44.41-.93.88-1.58.88s-1.14-.47-1.58-.88c-.24-.24-.5-.5-.71-.58-.21-.08-.55-.08-.88-.09-.6 0-1.3-.02-1.78-.5s-.5-1.17-.5-1.78v-.1c0-.3-.01-.58-.1-.78-.09-.21-.33-.47-.57-.71C1.47 9.13 1 8.64 1 8s.47-1.14.88-1.58c.24-.24.5-.5.58-.71.08-.21.08-.55.09-.88 0-.6.02-1.3.5-1.78s1.17-.5 1.78-.5h.1c.3 0 .58-.01.78-.1.21-.09.47-.33.71-.57C6.87 1.47 7.35 1 8 1s1.14.47 1.57.88c.25.24.52.5.72.58.21.08.55.08.88.09.6 0 1.3.02 1.78.5s.5 1.17.5 1.78v.1c0 .3.01.58.1.78Zm-5.76 4.83 4.03-4.03-1.06-1.06-3.5 3.5-2-2L4.19 8l2.53 2.53c.3.3.77.3 1.06 0Z"/></svg>` : ''}
+                  </div>
+                  ${item.followers_count?`<div class="artist-meta">${fmtNum(item.followers_count)} followers</div>`:''}
+                </div>
+              `).join('')}
+            </div>
+          `).join('')}</div>`;
         }
 
         if (playlists.length) {
-          html += `<div class="horizontal-scroll" style="${users.length?'margin-top:10px':''}">${playlists.map(item=>`
-            <div class="playlist-card" onclick="openPlaylist('${esc(item.permalink_url||String(item.id))}','${currentTab}')">
-              ${item.artwork_url
-                ? `<img class="playlist-thumb" src="${esc(item.artwork_url)}" loading="lazy" alt="" onerror="this.outerHTML='<div class=\\'playlist-thumb-ph\\'>${esc(item.title||'')}</div>'" />`
-                : `<div class="playlist-thumb-ph">${esc(item.title||'Playlist')}</div>`}
-              <div class="playlist-info">
-                <div class="playlist-name">${esc(item.title||'')}</div>
-                <div class="playlist-meta">${item.track_count ? item.track_count+' tracks' : ''}</div>
-              </div>
-            </div>`).join('')}
-          </div>`;
+          let chunks = [];
+          for (let i = 0; i < playlists.length; i += 2) {
+            chunks.push(playlists.slice(i, i + 2));
+          }
+          html += `<div class="swipe-grid-container" style="${users.length?'margin-top:10px':''}">${chunks.map(chunk => `
+            <div class="swipe-grid-column">
+              ${chunk.map(item => `
+                <div class="playlist-card" style="width:100%" onclick="openPlaylist('${esc(item.permalink_url||String(item.id))}','${currentTab}')">
+                  ${item.artwork_url
+                    ? `<img class="playlist-thumb" src="${esc(item.artwork_url)}" style="width:100%;height:auto;aspect-ratio:1;" loading="lazy" alt="" onerror="this.outerHTML='<div class=\\'playlist-thumb-ph\\'>${esc(item.title||'')}</div>'" />`
+                    : `<div class="playlist-thumb-ph" style="width:100%;height:auto;aspect-ratio:1;">${esc(item.title||'Playlist')}</div>`}
+                  <div class="playlist-info">
+                    <div class="playlist-name">${esc(item.title||'')}</div>
+                    <div class="playlist-meta">${item.track_count ? item.track_count+' tracks' : ''}</div>
+                  </div>
+                </div>
+              `).join('')}
+            </div>
+          `).join('')}</div>`;
         }
 
         if (tracksIn.length) {
@@ -674,19 +671,27 @@
       const container = document.getElementById('feedList');
       if (!artists.length) { container.innerHTML = '<div class="state-box"><p>No artists found.</p></div>'; return; }
       
-      // Ginawa ring ap-scroll-grid para maging tag-dalawa pababa at pwedeng i-swipe pakanan ang mga artist sa Feed
-      container.innerHTML = `<div class="ap-scroll-grid">${artists.map((a, i) => `
-        <div class="artist-card" style="width: 100%; flex: unset;" onclick="openArtistProfile('${esc(a.permalink_url||'')}')">
-          ${a.avatar_url
-            ? `<img class="artist-avatar" src="${esc(a.avatar_url)}" loading="lazy" alt="" onerror="this.outerHTML='<div class=\\'artist-avatar-ph\\'>🎵</div>'" />`
-            : `<div class="artist-avatar-ph">🎵</div>`}
-          <div class="feed-info">
-            <div class="feed-name">
-              <span>${esc(a.username)}</span>
-              ${a.verified ? `<svg width="12" height="12" viewBox="0 0 16 16" fill="none" style="flex-shrink:0"><path fill="#1DA1F2" d="M13.54 5.7c.1.22.34.48.58.72.41.44.88.93.88 1.58s-.47 1.14-.88 1.57c-.24.25-.5.52-.58.72-.08.21-.08.55-.09.88 0 .6-.02 1.3-.5 1.78s-1.17.5-1.78.5h-.1c-.3 0-.58.01-.78.1-.21.09-.47.33-.71.57-.44.41-.93.88-1.58.88s-1.14-.47-1.58-.88c-.24-.24-.5-.5-.71-.58-.21-.08-.55-.08-.88-.09-.6 0-1.3-.02-1.78-.5s-.5-1.17-.5-1.78v-.1c0-.3-.01-.58-.1-.78-.09-.21-.33-.47-.57-.71C1.47 9.13 1 8.64 1 8s.47-1.14.88-1.58c.24-.24.5-.5.58-.71.08-.21.08-.55.09-.88 0-.6.02-1.3.5-1.78s1.17-.5 1.78-.5h.1c.3 0 .58-.01.78-.1.21-.09.47-.33.71-.57C6.87 1.47 7.35 1 8 1s1.14.47 1.57.88c.25.24.52.5.72.58.21.08.55.08.88.09.6 0 1.3.02 1.78.5s.5 1.17.5 1.78v.1c0 .3.01.58.1.78Zm-5.76 4.83 4.03-4.03-1.06-1.06-3.5 3.5-2-2L4.19 8l2.53 2.53c.3.3.77.3 1.06 0Z"/></svg>` : ''}
+      let chunks = [];
+      for (let i = 0; i < artists.length; i += 2) {
+        chunks.push(artists.slice(i, i + 2));
+      }
+
+      container.innerHTML = `<div class="swipe-grid-container" style="padding:0 14px">${chunks.map(chunk => `
+        <div class="swipe-grid-column">
+          ${chunk.map(a => `
+            <div class="artist-card" style="width:100%" onclick="openArtistProfile('${esc(a.permalink_url||'')}')">
+              ${a.avatar_url
+                ? `<img class="artist-avatar" src="${esc(a.avatar_url)}" loading="lazy" alt="" onerror="this.outerHTML='<div class=\\'artist-avatar-ph\\'>🎵</div>'" />`
+                : `<div class="artist-avatar-ph">🎵</div>`}
+              <div class="feed-info">
+                <div class="feed-name">
+                  <span>${esc(a.username)}</span>
+                  ${a.verified ? `<svg width="12" height="12" viewBox="0 0 16 16" fill="none" style="flex-shrink:0"><path fill="#1DA1F2" d="M13.54 5.7c.1.22.34.48.58.72.41.44.88.93.88 1.58s-.47 1.14-.88 1.57c-.24.25-.5.52-.58.72-.08.21-.08.55-.09.88 0 .6-.02 1.3-.5 1.78s-1.17.5-1.78.5h-.1c-.3 0-.58.01-.78.1-.21.09-.47.33-.71.57-.44.41-.93.88-1.58.88s-1.14-.47-1.58-.88c-.24-.24-.5-.5-.71-.58-.21-.08-.55-.08-.88-.09-.6 0-1.3-.02-1.78-.5s-.5-1.17-.5-1.78v-.1c0-.3-.01-.58-.1-.78-.09-.21-.33-.47-.57-.71C1.47 9.13 1 8.64 1 8s.47-1.14.88-1.58c.24-.24.5-.5.58-.71.08-.21.08-.55.09-.88 0-.6.02-1.3.5-1.78s1.17-.5 1.78-.5h.1c.3 0 .58-.01.78-.1.21-.09.47-.33.71-.57C6.87 1.47 7.35 1 8 1s1.14.47 1.57.88c.25.24.52.5.72.58.21.08.55.08.88.09.6 0 1.3.02 1.78.5s.5 1.17.5 1.78v.1c0 .3.01.58.1.78Zm-5.76 4.83 4.03-4.03-1.06-1.06-3.5 3.5-2-2L4.19 8l2.53 2.53c.3.3.77.3 1.06 0Z"/></svg>` : ''}
+                </div>
+                <div class="feed-followers">${fmtNum(a.followers_count)} Followers</div>
+              </div>
             </div>
-            <div class="feed-followers">${fmtNum(a.followers_count)} Followers</div>
-          </div>
+          `).join('')}
         </div>
       `).join('')}</div>`;
     }
@@ -743,37 +748,53 @@
       if (u.description) html += `<div class="ap-desc">${esc(u.description)}</div>`;
 
       if (u.topTracks && u.topTracks.length) {
-        // Pinalitan ng ap-scroll-grid para maging tag-dalawa pababa at pwedeng i-swipe pakanan ang mga track/kanta
-        html += `<div class="ap-section-head">Tracks</div><div class="ap-scroll-grid">`;
-        u.topTracks.forEach((t, i) => {
-          const art = t.artwork_url
-            ? `<img class="ap-track-thumb" src="${esc(t.artwork_url)}" loading="lazy" alt="" onerror="this.style.display='none'" />`
-            : `<div class="ap-track-thumb" style="display:flex;align-items:center;justify-content:center">🎵</div>`;
-          html += `<div class="ap-track-card" style="width: 100%; flex: unset;" onclick="playTrackDirect(${JSON.stringify(t).replace(/"/g,'&quot;')})">
-            ${art}
-            <div class="playlist-info" style="padding:4px 0 0">
-              <div class="playlist-name">${esc(t.title||'')}</div>
-              <div class="playlist-meta">${esc(t.user?.username||u.username||'')}</div>
-            </div>
-          </div>`;
+        let trackChunks = [];
+        for (let i = 0; i < u.topTracks.length; i += 2) {
+          trackChunks.push(u.topTracks.slice(i, i + 2));
+        }
+
+        html += `<div class="ap-section-head">Tracks</div><div class="swipe-grid-container" style="padding:0 14px 16px">`;
+        trackChunks.forEach(chunk => {
+          html += `<div class="swipe-grid-column">`;
+          chunk.forEach(t => {
+            const art = t.artwork_url
+              ? `<img class="ap-track-thumb" src="${esc(t.artwork_url)}" loading="lazy" alt="" onerror="this.style.display='none'" />`
+              : `<div class="ap-track-thumb" style="display:flex;align-items:center;justify-content:center">🎵</div>`;
+            html += `<div class="ap-track-card" style="width:100%" onclick="playTrackDirect(${JSON.stringify(t).replace(/"/g,'&quot;')})">
+              ${art}
+              <div class="playlist-info" style="padding:4px 0 0">
+                <div class="playlist-name">${esc(t.title||'')}</div>
+                <div class="playlist-meta">${esc(t.user?.username||u.username||'')}</div>
+              </div>
+            </div>`;
+          });
+          html += `</div>`;
         });
         html += `</div>`;
       }
 
       if (u.playlists && u.playlists.length) {
-        // Pinalitan din ng ap-scroll-grid para maging tag-dalawa pababa at pwedeng i-swipe pakanan ang mga playlist
-        html += `<div class="ap-section-head">Playlists</div><div class="ap-scroll-grid">`;
-        u.playlists.forEach(p => {
-          const thumb = p.artwork_url
-            ? `<img class="playlist-thumb" style="width:100%; height:auto; aspect-ratio:1;" src="${esc(p.artwork_url)}" loading="lazy" alt="" onerror="this.outerHTML='<div class=\\'playlist-thumb-ph\\'>🎵</div>'" />`
-            : `<div class="playlist-thumb-ph" style="width:100%; height:auto; aspect-ratio:1;">🎵</div>`;
-          html += `<div class="playlist-card" style="width: 100%; flex: unset;" onclick="openPlaylist('${esc(p.permalink_url||'')}','artist')">
-            ${thumb}
-            <div class="playlist-info">
-              <div class="playlist-name">${esc(p.title||'')}</div>
-              <div class="playlist-meta">${p.track_count ? p.track_count+' tracks' : ''}</div>
-            </div>
-          </div>`;
+        let playlistChunks = [];
+        for (let i = 0; i < u.playlists.length; i += 2) {
+          playlistChunks.push(u.playlists.slice(i, i + 2));
+        }
+
+        html += `<div class="ap-section-head">Playlists</div><div class="swipe-grid-container" style="padding:0 14px 14px">`;
+        playlistChunks.forEach(chunk => {
+          html += `<div class="swipe-grid-column">`;
+          chunk.forEach(p => {
+            const thumb = p.artwork_url
+              ? `<img class="playlist-thumb" src="${esc(p.artwork_url)}" style="width:100%;height:auto;aspect-ratio:1;" loading="lazy" alt="" onerror="this.outerHTML='<div class=\\'playlist-thumb-ph\\'>🎵</div>'" />`
+              : `<div class="playlist-thumb-ph" style="width:100%;height:auto;aspect-ratio:1;">🎵</div>`;
+            html += `<div class="playlist-card" style="width:100%" onclick="openPlaylist('${esc(p.permalink_url||'')}','artist')">
+              ${thumb}
+              <div class="playlist-info">
+                <div class="playlist-name">${esc(p.title||'')}</div>
+                <div class="playlist-meta">${p.track_count ? p.track_count+' tracks' : ''}</div>
+              </div>
+            </div>`;
+          });
+          html += `</div>`;
         });
         html += `</div>`;
       }
@@ -1088,6 +1109,12 @@
       currentContext = 'playlist';
 
       const date = pl.created_at ? new Date(pl.created_at).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}) : '';
+      
+      let trackChunks = [];
+      for (let i = 0; i < tracks.length; i += 2) {
+        trackChunks.push(tracks.slice(i, i + 2));
+      }
+
       const body = document.getElementById('playlistPageBody');
       body.innerHTML = `
       <div style="position:relative">
@@ -1139,26 +1166,25 @@
             </button>
           </div>
         </div>
-        <div class="pl-track-list">
-          ${tracks.map((t,i)=>`
-            <div class="pl-track-item" id="pltItem${i}" onclick="playTrack(${i});openNowPlaying()">
-              ${t.artwork_url
-                ? `<img class="pl-track-art" src="${esc(t.artwork_url)}" loading="lazy" alt="" onerror="this.outerHTML='<div class=\\'pl-track-art-ph\\'>🎵</div>'" />`
-                : `<div class="pl-track-art-ph">🎵</div>`}
-              <div class="pl-track-info">
-                <div class="pl-track-title">${esc(t.title)}</div>
-                <div class="pl-track-artist">${esc(t.user?.username||'')}</div>
-              </div>
-              <div class="pl-track-dur">${t.duration||''}</div>
-              <button class="dl-btn" onclick="event.stopPropagation(); downloadTrack(event, ${i})">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                  <polyline points="7 10 12 15 17 10"/>
-                  <line x1="12" y1="15" x2="12" y2="3"/>
-                </svg>
-                DL
-              </button>
-            </div>`).join('')}
+        <div class="swipe-grid-container" style="padding: 4px 14px;">
+          ${trackChunks.map((chunk, chunkIdx) => `
+            <div class="swipe-grid-column" style="gap:6px;">
+              ${chunk.map((t, localIdx) => {
+                const i = chunkIdx * 2 + localIdx;
+                return `
+                  <div class="ap-track-card" style="width:100%; display:flex; flex-direction:row; align-items:center; gap:10px; padding:8px;" id="pltItem${i}" onclick="playTrack(${i});openNowPlaying()">
+                    ${t.artwork_url
+                      ? `<img class="pl-track-art" src="${esc(t.artwork_url)}" loading="lazy" alt="" onerror="this.outerHTML='<div class=\\'pl-track-art-ph\\'>🎵</div>'" />`
+                      : `<div class="pl-track-art-ph">🎵</div>`}
+                    <div class="pl-track-info" style="flex:1; min-width:0;">
+                      <div class="pl-track-title">${esc(t.title)}</div>
+                      <div class="pl-track-artist">${esc(t.user?.username||'')}</div>
+                    </div>
+                  </div>
+                `;
+              }).join('')}
+            </div>
+          `).join('')}
         </div>
       </div>`;
       body.scrollTop = 0;
@@ -1175,14 +1201,10 @@
       if (!t) return;
       currentIdx = idx;
 
-      document.querySelectorAll('.track-item,.pl-track-item').forEach(el => {
-        const i = parseInt(el.id.replace(/\D/g,''));
+      document.querySelectorAll('.track-item,.pl-track-item,.ap-track-card').forEach(el => {
+        const i = parseInt(el.id?.replace(/\D/g,'') ?? -1);
         const isActive = i === idx;
         el.classList.toggle('active', isActive);
-        const num = el.querySelector('.track-num');
-        if (num) num.innerHTML = isActive
-          ? `<div class="bars"><div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div></div>`
-          : String(i+1);
       });
 
       updateMiniPlayer(t);
