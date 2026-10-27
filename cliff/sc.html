@@ -47,8 +47,8 @@
     html, body { height: 100%; background: #111; margin: 0; overflow-x: hidden; width: 100%; }
     body { font-family: 'Inter', sans-serif; font-size: 14px; display: flex; justify-content: center; }
     #app { position: relative; width: 100%; max-width: 480px; height: 100%; overflow: hidden; background: var(--bg); color: var(--text); box-shadow: 0 0 40px rgba(0,0,0,0.8); }
-    .page { position: absolute; inset: 0; display: flex; flex-direction: column; overflow: hidden; transition: opacity 0.2s ease; will-change: opacity; }
-    .page.hidden { display: none !important; }
+    .page { position: absolute; inset: 0; display: flex; flex-direction: column; overflow: hidden; transition: transform 0.3s cubic-bezier(.4,0,.2,1), opacity 0.3s; will-change: transform; }
+    .page.hidden { transform: translateX(100%); opacity: 0; pointer-events: none; }
     .page.slide-up { transform: translateY(100%); opacity: 0; pointer-events: none; }
     .topbar { flex-shrink: 0; background: rgba(14,14,14,0.96); backdrop-filter: blur(16px); border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 14px; padding: 0 18px; height: 56px; }
     .sc-logo { display: flex; align-items: center; gap: 8px; text-decoration: none; }
@@ -88,7 +88,7 @@
     .horizontal-scroll .artist-card:hover { background: var(--surface2); transform: translateY(-2px); border-color: var(--border); }
     .artist-avatar { width: 64px; height: 64px; border-radius: 50%; object-fit: cover; background: var(--surface3); margin: 0 auto 8px; display: block; }
     .artist-avatar-ph { width: 64px; height: 64px; border-radius: 50%; background: linear-gradient(135deg, var(--accent), #9b4dca); margin: 0 auto 8px; display: flex; align-items: center; justify-content: center; font-size: 24px; }
-    .artist-name { font-weight: 600; font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .artist-name { font-weight: 600; font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: flex; align-items: center; justify-content: center; gap: 3px; }
     .artist-meta { font-size: 11px; color: var(--muted); margin-top: 2px; }
     .playlist-info { padding: 8px 10px 10px; }
     .playlist-name { font-weight: 600; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 2px; }
@@ -146,11 +146,17 @@
     .feed-header { padding: 20px 16px 8px; }
     .feed-title { font-size: 24px; font-weight: 700; margin-bottom: 6px; }
     .feed-subtitle { font-size: 14px; color: var(--sub); line-height: 1.4; }
-    .artist-grid-2col { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; padding: 0 14px; }
-    .artist-grid-card { display: flex; align-items: center; gap: 12px; background: var(--surface); border-radius: 10px; padding: 10px; cursor: pointer; transition: background 0.15s; border: 1px solid transparent; }
-    .artist-grid-card:hover { background: var(--surface2); border-color: var(--border); }
-    .feed-avatar { width: 48px; height: 48px; border-radius: 50%; object-fit: cover; flex-shrink: 0; background: var(--surface2); }
-    .feed-avatar-ph { width: 48px; height: 48px; border-radius: 50%; background: #2a2a2a; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 18px; }
+    
+    /* Feed Horizontal Swipe Styles */
+    .feed-horizontal-scroll { display: flex; gap: 12px; overflow-x: auto; overflow-y: hidden; scroll-snap-type: x mandatory; scrollbar-width: none; -webkit-overflow-scrolling: touch; padding: 4px 16px 16px; }
+    .feed-horizontal-scroll::-webkit-scrollbar { display: none; }
+    .feed-card { flex: 0 0 150px; width: 150px; scroll-snap-align: start; background: var(--surface); border-radius: 12px; padding: 16px 12px; text-align: center; cursor: pointer; transition: background 0.15s, transform 0.15s; border: 1px solid transparent; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+    .feed-card:hover { background: var(--surface2); transform: translateY(-2px); border-color: var(--border); }
+    .feed-avatar { width: 68px; height: 68px; border-radius: 50%; object-fit: cover; background: var(--surface3); margin: 0 auto 10px; display: block; }
+    .feed-avatar-ph { width: 68px; height: 68px; border-radius: 50%; background: #2a2a2a; margin: 0 auto 10px; display: flex; align-items: center; justify-content: center; font-size: 24px; }
+    .feed-name { font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%; display: flex; align-items: center; justify-content: center; gap: 4px; margin-bottom: 2px; }
+    .feed-followers { font-size: 11px; color: var(--muted); }
+
     .ap-hero { position: relative; min-height: 180px; background: var(--surface2); display: flex; align-items: flex-end; padding: 20px 18px 16px; }
     .ap-hero-bg { position: absolute; inset: 0; background-size: cover; background-position: center; filter: blur(18px) brightness(0.4); }
     .ap-hero-content { position: relative; display: flex; align-items: flex-end; gap: 14px; width: 100%; }
@@ -166,9 +172,6 @@
     .ap-track-card { background: var(--surface); border-radius: 8px; overflow: hidden; cursor: pointer; padding: 8px; display: flex; flex-direction: column; gap: 6px; transition: background 0.15s; }
     .ap-track-card:hover { background: var(--surface2); }
     .ap-track-thumb { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 6px; background: var(--surface3); }
-    .feed-info { flex: 1; min-width: 0; }
-    .feed-name { font-size: 14px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: flex; align-items: center; gap: 4px; margin-bottom: 2px; }
-    .feed-followers { display: flex; align-items: center; gap: 4px; font-size: 11px; color: var(--sub); }
     .state-box { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 60px 20px; color: var(--muted); text-align: center; gap: 12px; }
     .state-box svg { opacity: 0.3; }
     .state-box p { font-size: 15px; }
@@ -205,7 +208,7 @@
     .pl-track-title { font-weight: 500; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 2px; }
     .pl-track-artist { font-size: 12px; color: var(--sub); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .pl-track-dur { color: var(--muted); font-size: 12px; flex-shrink: 0; }
-    #nowPlayingPage { z-index: 600; overflow: hidden; transition: transform 0.3s cubic-bezier(.4,0,.2,1), opacity 0.3s; }
+    #nowPlayingPage { z-index: 600; overflow: hidden; }
     .np-full-bg { position: absolute; inset: 0; background-size: cover; background-position: center; transform: scale(1.04); pointer-events: none; transition: background-image 0.4s; }
     .np-overlay { position: absolute; inset: 0; background: linear-gradient(to bottom, rgba(0,0,0,0.45) 0%, rgba(0,0,0,0.1) 35%, rgba(0,0,0,0.1) 55%, rgba(0,0,0,0.65) 75%, rgba(0,0,0,0.85) 100%); pointer-events: none; }
     .np-content { position: relative; z-index: 1; display: flex; flex-direction: column; height: 100%; }
@@ -360,7 +363,7 @@
       <div class="pl-page-body" id="artistPageBody"></div>
     </div>
 
-    <div class="page slide-up hidden" id="nowPlayingPage">
+    <div class="page slide-up" id="nowPlayingPage">
       <div class="np-full-bg" id="npFullBg"></div>
       <div class="np-overlay"></div>
       <div class="np-content">
@@ -538,17 +541,8 @@
       if (tab !== 'search') currentContext = null;
     }
 
-    function openNowPlaying() {
-      const np = document.getElementById('nowPlayingPage');
-      np.classList.remove('hidden');
-      void np.offsetWidth;
-      np.classList.remove('slide-up');
-    }
-    function closeNowPlaying() {
-      const np = document.getElementById('nowPlayingPage');
-      np.classList.add('slide-up');
-      setTimeout(() => { if (np.classList.contains('slide-up')) np.classList.add('hidden'); }, 300);
-    }
+    function openNowPlaying() { document.getElementById('nowPlayingPage').classList.remove('slide-up'); }
+    function closeNowPlaying() { document.getElementById('nowPlayingPage').classList.add('slide-up'); }
 
     async function loadDiscover() {
       try {
@@ -584,7 +578,13 @@
               ${item.avatar_url
                 ? `<img class="artist-avatar" src="${esc(item.avatar_url)}" loading="lazy" alt="" onerror="this.outerHTML='<div class=\\'artist-avatar-ph\\'>🎵</div>'" />`
                 : `<div class="artist-avatar-ph">🎵</div>`}
-              <div class="artist-name">${esc(item.username||'')}</div>
+              <div class="artist-name">${esc(item.username||'')}
+                ${item.verified ? `
+                  <svg width="12" height="12" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" style="flex-shrink:0;">
+                    <path fill="#1DA1F2" d="M13.54 5.7c.1.22.34.48.58.72.41.44.88.93.88 1.58s-.47 1.14-.88 1.57c-.24.25-.5.52-.58.72-.08.21-.08.55-.09.88 0 .6-.02 1.3-.5 1.78s-1.17.5-1.78.5h-.1c-.3 0-.58.01-.78.1-.21.09-.47.33-.71.57-.44.41-.93.88-1.58.88s-1.14-.47-1.58-.88c-.24-.24-.5-.5-.71-.58-.21-.08-.55-.08-.88-.09-.6 0-1.3-.02-1.78-.5s-.5-1.17-.5-1.78v-.1c0-.3-.01-.58-.1-.78-.09-.21-.33-.47-.57-.71C1.47 9.13 1 8.64 1 8s.47-1.14.88-1.58c.24-.24.5-.5.58-.71.08-.21.08-.55.09-.88 0-.6.02-1.3.5-1.78s1.17-.5 1.78-.5h.1c.3 0 .58-.01.78-.1.21-.09.47-.33.71-.57C6.87 1.47 7.35 1 8 1s1.14.47 1.57.88c.25.24.52.5.72.58.21.08.55.08.88.09.6 0 1.3.02 1.78.5s.5 1.17.5 1.78v.1c0 .3.01.58.1.78Zm-5.76 4.83 4.03-4.03-1.06-1.06-3.5 3.5-2-2L4.19 8l2.53 2.53c.3.3.77.3 1.06 0Z"></path>
+                  </svg>
+                ` : ''}
+              </div>
               ${item.followers_count?`<div class="artist-meta">${fmtNum(item.followers_count)} followers</div>`:''}
             </div>`).join('')}
           </div>`;
@@ -657,24 +657,31 @@
       }
     }
 
-    const following = new Set();
-
     function renderFeed(artists) {
       const container = document.getElementById('feedList');
       if (!artists.length) { container.innerHTML = '<div class="state-box"><p>No artists found.</p></div>'; return; }
-      container.innerHTML = `<div class="artist-grid-2col">${artists.map((a, i) => `
-        <div class="artist-grid-card" onclick="openArtistProfile('${esc(a.permalink_url||'')}')">
-          ${a.avatar_url
-            ? `<img class="feed-avatar" src="${esc(a.avatar_url)}" loading="lazy" alt="" onerror="this.outerHTML='<div class=\\'feed-avatar-ph\\'>🎵</div>'" />`
-            : `<div class="feed-avatar-ph">🎵</div>`}
-          <div class="feed-info">
-            <div class="feed-name">
-              <span>${esc(a.username)}</span>
+      
+      container.innerHTML = `
+        <div style="padding: 10px 16px 4px; font-size: 15px; font-weight: 700;">Suggested Artists</div>
+        <div class="feed-horizontal-scroll">
+          ${artists.map((a) => `
+            <div class="feed-card" onclick="openArtistProfile('${esc(a.permalink_url||'')}')">
+              ${a.avatar_url
+                ? `<img class="feed-avatar" src="${esc(a.avatar_url)}" loading="lazy" alt="" onerror="this.outerHTML='<div class=\\'feed-avatar-ph\\'>🎵</div>'" />`
+                : `<div class="feed-avatar-ph">🎵</div>`}
+              <div class="feed-name">
+                <span>${esc(a.username)}</span>
+                ${a.verified ? `
+                  <svg width="12" height="12" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" style="flex-shrink:0;">
+                    <path fill="#1DA1F2" d="M13.54 5.7c.1.22.34.48.58.72.41.44.88.93.88 1.58s-.47 1.14-.88 1.57c-.24.25-.5.52-.58.72-.08.21-.08.55-.09.88 0 .6-.02 1.3-.5 1.78s-1.17.5-1.78.5h-.1c-.3 0-.58.01-.78.1-.21.09-.47.33-.71.57-.44.41-.93.88-1.58.88s-1.14-.47-1.58-.88c-.24-.24-.5-.5-.71-.58-.21-.08-.55-.08-.88-.09-.6 0-1.3-.02-1.78-.5s-.5-1.17-.5-1.78v-.1c0-.3-.01-.58-.1-.78-.09-.21-.33-.47-.57-.71C1.47 9.13 1 8.64 1 8s.47-1.14.88-1.58c.24-.24.5-.5.58-.71.08-.21.08-.55.09-.88 0-.6.02-1.3.5-1.78s1.17-.5 1.78-.5h.1c.3 0 .58-.01.78-.1.21-.09.47-.33.71-.57C6.87 1.47 7.35 1 8 1s1.14.47 1.57.88c.25.24.52.5.72.58.21.08.55.08.88.09.6 0 1.3.02 1.78.5s.5 1.17.5 1.78v.1c0 .3.01.58.1.78Zm-5.76 4.83 4.03-4.03-1.06-1.06-3.5 3.5-2-2L4.19 8l2.53 2.53c.3.3.77.3 1.06 0Z"></path>
+                  </svg>
+                ` : ''}
+              </div>
+              <div class="feed-followers">${fmtNum(a.followers_count)} followers</div>
             </div>
-            <div class="feed-followers">${fmtNum(a.followers_count)} Followers</div>
-          </div>
+          `).join('')}
         </div>
-      `).join('')}</div>`;
+      `;
     }
 
     let artistReturnTab = 'feed';
@@ -717,7 +724,7 @@
               <div class="ap-name">
                 <span>${esc(u.username)}</span>
                 ${u.verified ? `
-                  <svg data-testid="verified-badge" width="16" height="16" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" style="vertical-align: middle;">
+                  <svg width="16" height="16" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" style="flex-shrink:0;">
                     <path fill="#1DA1F2" d="M13.54 5.7c.1.22.34.48.58.72.41.44.88.93.88 1.58s-.47 1.14-.88 1.57c-.24.25-.5.52-.58.72-.08.21-.08.55-.09.88 0 .6-.02 1.3-.5 1.78s-1.17.5-1.78.5h-.1c-.3 0-.58.01-.78.1-.21.09-.47.33-.71.57-.44.41-.93.88-1.58.88s-1.14-.47-1.58-.88c-.24-.24-.5-.5-.71-.58-.21-.08-.55-.08-.88-.09-.6 0-1.3-.02-1.78-.5s-.5-1.17-.5-1.78v-.1c0-.3-.01-.58-.1-.78-.09-.21-.33-.47-.57-.71C1.47 9.13 1 8.64 1 8s.47-1.14.88-1.58c.24-.24.5-.5.58-.71.08-.21.08-.55.09-.88 0-.6.02-1.3.5-1.78s1.17-.5 1.78-.5h.1c.3 0 .58-.01.78-.1.21-.09.47-.33.71-.57C6.87 1.47 7.35 1 8 1s1.14.47 1.57.88c.25.24.52.5.72.58.21.08.55.08.88.09.6 0 1.3.02 1.78.5s.5 1.17.5 1.78v.1c0 .3.01.58.1.78Zm-5.76 4.83 4.03-4.03-1.06-1.06-3.5 3.5-2-2L4.19 8l2.53 2.53c.3.3.77.3 1.06 0Z"></path>
                   </svg>
                 ` : ''}
@@ -933,10 +940,9 @@
             ? `<img class="sr-avatar" src="${esc(u.avatar_url)}" loading="lazy" alt="" onerror="this.outerHTML='<div class=\\'sr-avatar-ph\\'>👤</div>'">`
             : `<div class="sr-avatar-ph">👤</div>`}
           <div class="sr-info">
-            <div class="sr-title">
-              <span>${esc(u.username||'')}</span>
+            <div class="sr-title">${esc(u.username||'')}
               ${u.verified ? `
-                <svg data-testid="verified-badge" width="14" height="14" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" style="vertical-align: middle;">
+                <svg data-testid="verified-badge" width="14" height="14" class="UserCell_Badge__1QjSo" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
                   <path fill="#1DA1F2" d="M13.54 5.7c.1.22.34.48.58.72.41.44.88.93.88 1.58s-.47 1.14-.88 1.57c-.24.25-.5.52-.58.72-.08.21-.08.55-.09.88 0 .6-.02 1.3-.5 1.78s-1.17.5-1.78.5h-.1c-.3 0-.58.01-.78.1-.21.09-.47.33-.71.57-.44.41-.93.88-1.58.88s-1.14-.47-1.58-.88c-.24-.24-.5-.5-.71-.58-.21-.08-.55-.08-.88-.09-.6 0-1.3-.02-1.78-.5s-.5-1.17-.5-1.78v-.1c0-.3-.01-.58-.1-.78-.09-.21-.33-.47-.57-.71C1.47 9.13 1 8.64 1 8s.47-1.14.88-1.58c.24-.24.5-.5.58-.71.08-.21.08-.55.09-.88 0-.6.02-1.3.5-1.78s1.17-.5 1.78-.5h.1c.3 0 .58-.01.78-.1.21-.09.47-.33.71-.57C6.87 1.47 7.35 1 8 1s1.14.47 1.57.88c.25.24.52.5.72.58.21.08.55.08.88.09.6 0 1.3.02 1.78.5s.5 1.17.5 1.78v.1c0 .3.01.58.1.78Zm-5.76 4.83 4.03-4.03-1.06-1.06-3.5 3.5-2-2L4.19 8l2.53 2.53c.3.3.77.3 1.06 0Z"></path>
                 </svg>
               ` : ''}
@@ -1090,11 +1096,11 @@
           <div class="pl-info">
             <div class="pl-title">${esc(pl.title||'Playlist')}</div>
             <div class="pl-curator">
-              <span>${esc(ownerName)}</span>
+              ${esc(ownerName)}
               ${pl.user?.verified ? `
-                <svg data-testid="verified-badge" width="12" height="12" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" style="vertical-align: middle;">
-                  <path fill="#1DA1F2" d="M13.54 5.7c.1.22.34.48.58.72.41.44.88.93.88 1.58s-.47 1.14-.88 1.57c-.24.25-.5.52-.58.72-.08.21-.08.55-.09.88 0 .6-.02 1.3-.5 1.78s-1.17.5-1.78.5h-.1c-.3 0-.58.01-.78.1-.21.09-.47.33-.71.57-.44.41-.93.88-1.58.88s-1.14-.47-1.58-.88c-.24-.24-.5-.5-.71-.58-.21-.08-.55-.08-.88-.09-.6 0-1.3-.02-1.78-.5s-.5-1.17-.5-1.78v-.1c0-.3-.01-.58-.1-.78-.09-.21-.33-.47-.57-.71C1.47 9.13 1 8.64 1 8s.47-1.14.88-1.58c.24-.24.5-.5.58-.71.08-.21.08-.55.09-.88 0-.6.02-1.3.5-1.78s1.17-.5 1.78-.5h.1c.3 0 .58-.01.78-.1.21-.09.47-.33.71-.57C6.87 1.47 7.35 1 8 1s1.14.47 1.57.88c.25.24.52.5.72.58.21.08.55.08.88.09.6 0 1.3.02 1.78.5s.5 1.17.5 1.78v.1c0 .3.01.58.1.78Zm-5.76 4.83 4.03-4.03-1.06-1.06-3.5 3.5-2-2L4.19 8l2.53 2.53c.3.3.77.3 1.06 0Z"></path>
-                </svg>
+              <svg width="12" height="12" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" style="vertical-align: middle; margin-left: 4px;">
+                <path fill="#1DA1F2" d="M13.54 5.7c.1.22.34.48.58.72.41.44.88.93.88 1.58s-.47 1.14-.88 1.57c-.24.25-.5.52-.58.72-.08.21-.08.55-.09.88 0 .6-.02 1.3-.5 1.78s-1.17.5-1.78.5h-.1c-.3 0-.58.01-.78.1-.21.09-.47.33-.71.57-.44.41-.93.88-1.58.88s-1.14-.47-1.58-.88c-.24-.24-.5-.5-.71-.58-.21-.08-.55-.08-.88-.09-.6 0-1.3-.02-1.78-.5s-.5-1.17-.5-1.78v-.1c0-.3-.01-.58-.1-.78-.09-.21-.33-.47-.57-.71C1.47 9.13 1 8.64 1 8s.47-1.14.88-1.58c.24-.24.5-.5.58-.71.08-.21.08-.55.09-.88 0-.6.02-1.3.5-1.78s1.17-.5 1.78-.5h.1c.3 0 .58-.01.78-.1.21-.09.47-.33.71-.57C6.87 1.47 7.35 1 8 1s1.14.47 1.57.88c.25.24.52.5.72.58.21.08.55.08.88.09.6 0 1.3.02 1.78.5s.5 1.17.5 1.78v.1c0 .3.01.58.1.78Zm-5.76 4.83 4.03-4.03-1.06-1.06-3.5 3.5-2-2L4.19 8l2.53 2.53c.3.3.77.3 1.06 0Z"></path>
+              </svg>
               ` : ''}
             </div>
             <div class="pl-meta-row">Playlist &nbsp;·&nbsp; ${pl.duration||''} &nbsp;·&nbsp; ${pl.track_count||tracks.length} Tracks${date?' &nbsp;·&nbsp; '+date:''}</div>
