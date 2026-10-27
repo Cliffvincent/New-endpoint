@@ -84,11 +84,11 @@
     .horizontal-scroll .playlist-card:hover { background: var(--surface2); transform: translateY(-2px); border-color: var(--border); }
     .horizontal-scroll .playlist-thumb { width: 140px; height: 140px; object-fit: cover; background: var(--surface3); display: block; }
     .horizontal-scroll .playlist-thumb-ph { width: 140px; height: 140px; background: linear-gradient(135deg, #2b2b2b, #111); display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 700; color: var(--text); padding: 8px; text-align: center; }
-    .horizontal-scroll .artist-card { flex: 0 0 110px; width: 110px; scroll-snap-align: start; background: var(--surface); border-radius: 10px; padding: 12px 8px; text-align: center; cursor: pointer; transition: background 0.15s, transform 0.15s; border: 1px solid transparent; }
+    .horizontal-scroll .artist-card { flex: 0 0 120px; width: 120px; scroll-snap-align: start; background: var(--surface); border-radius: 10px; padding: 12px 8px; text-align: center; cursor: pointer; transition: background 0.15s, transform 0.15s; border: 1px solid transparent; }
     .horizontal-scroll .artist-card:hover { background: var(--surface2); transform: translateY(-2px); border-color: var(--border); }
     .artist-avatar { width: 64px; height: 64px; border-radius: 50%; object-fit: cover; background: var(--surface3); margin: 0 auto 8px; display: block; }
     .artist-avatar-ph { width: 64px; height: 64px; border-radius: 50%; background: linear-gradient(135deg, var(--accent), #9b4dca); margin: 0 auto 8px; display: flex; align-items: center; justify-content: center; font-size: 24px; }
-    .artist-name { font-weight: 600; font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .artist-name { font-weight: 600; font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: flex; align-items: center; justify-content: center; gap: 3px; }
     .artist-meta { font-size: 11px; color: var(--muted); margin-top: 2px; }
     .playlist-info { padding: 8px 10px 10px; }
     .playlist-name { font-weight: 600; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 2px; }
@@ -138,7 +138,7 @@
     .sr-play-ov { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.55); border-radius: 6px; opacity: 0; transition: opacity 0.15s; }
     .sr-item:hover .sr-play-ov { opacity: 1; }
     .sr-info { flex: 1; min-width: 0; }
-    .sr-title { font-size: 15px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 3px; }
+    .sr-title { font-size: 15px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 3px; display: flex; align-items: center; gap: 4px; }
     .sr-artist { font-size: 13px; color: var(--sub); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 4px; }
     .sr-meta { font-size: 12px; color: var(--muted); display: flex; align-items: center; gap: 4px; }
     .sr-meta svg { flex-shrink: 0; }
@@ -146,11 +146,6 @@
     .feed-header { padding: 20px 16px 8px; }
     .feed-title { font-size: 24px; font-weight: 700; margin-bottom: 6px; }
     .feed-subtitle { font-size: 14px; color: var(--sub); line-height: 1.4; }
-    .artist-grid-2col { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; padding: 0 14px; }
-    .artist-grid-card { display: flex; align-items: center; gap: 12px; background: var(--surface); border-radius: 10px; padding: 10px; cursor: pointer; transition: background 0.15s; border: 1px solid transparent; }
-    .artist-grid-card:hover { background: var(--surface2); border-color: var(--border); }
-    .feed-avatar { width: 48px; height: 48px; border-radius: 50%; object-fit: cover; flex-shrink: 0; background: var(--surface2); }
-    .feed-avatar-ph { width: 48px; height: 48px; border-radius: 50%; background: #2a2a2a; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 18px; }
     .ap-hero { position: relative; min-height: 180px; background: var(--surface2); display: flex; align-items: flex-end; padding: 20px 18px 16px; }
     .ap-hero-bg { position: absolute; inset: 0; background-size: cover; background-position: center; filter: blur(18px) brightness(0.4); }
     .ap-hero-content { position: relative; display: flex; align-items: flex-end; gap: 14px; width: 100%; }
@@ -167,8 +162,8 @@
     .ap-track-card:hover { background: var(--surface2); }
     .ap-track-thumb { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 6px; background: var(--surface3); }
     .feed-info { flex: 1; min-width: 0; }
-    .feed-name { font-size: 14px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: flex; align-items: center; gap: 4px; margin-bottom: 2px; }
-    .feed-followers { display: flex; align-items: center; gap: 4px; font-size: 11px; color: var(--sub); }
+    .feed-name { font-size: 12px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: flex; align-items: center; justify-content: center; gap: 3px; margin-bottom: 2px; }
+    .feed-followers { display: flex; align-items: center; justify-content: center; gap: 4px; font-size: 11px; color: var(--sub); }
     .state-box { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 60px 20px; color: var(--muted); text-align: center; gap: 12px; }
     .state-box svg { opacity: 0.3; }
     .state-box p { font-size: 15px; }
@@ -229,7 +224,7 @@
     .np-time-row { display: flex; justify-content: space-between; align-items: center; padding: 7px 2px 0; }
     .np-time-badge { background: rgba(0,0,0,0.7); border-radius: 4px; padding: 2px 8px; font-size: 12px; font-weight: 700; color: #fff; }
     .np-time-badge.accent { background: var(--accent); }
-    .np-stats { display: flex; justify-content: space-around; align-items: center; padding: 18px 20px 44px; }
+    .np-stats { display: flex; justify-around: align-items: center; padding: 18px 20px 44px; }
     .np-stat-btn { display: flex; align-items: center; gap: 6px; background: none; border: none; color: rgba(255,255,255,0.7); font-size: 14px; cursor: pointer; font-family: inherit; transition: color 0.2s; }
     .np-stat-btn:hover { color: #fff; }
     .bars { display: flex; gap: 2px; align-items: center; height: 14px; }
@@ -575,7 +570,10 @@
               ${item.avatar_url
                 ? `<img class="artist-avatar" src="${esc(item.avatar_url)}" loading="lazy" alt="" onerror="this.outerHTML='<div class=\\'artist-avatar-ph\\'>🎵</div>'" />`
                 : `<div class="artist-avatar-ph">🎵</div>`}
-              <div class="artist-name">${esc(item.username||'')}</div>
+              <div class="artist-name">
+                <span>${esc(item.username||'')}</span>
+                ${item.verified ? `<svg width="12" height="12" viewBox="0 0 16 16" fill="none" style="flex-shrink:0"><path fill="#1DA1F2" d="M13.54 5.7c.1.22.34.48.58.72.41.44.88.93.88 1.58s-.47 1.14-.88 1.57c-.24.25-.5.52-.58.72-.08.21-.08.55-.09.88 0 .6-.02 1.3-.5 1.78s-1.17.5-1.78.5h-.1c-.3 0-.58.01-.78.1-.21.09-.47.33-.71.57-.44.41-.93.88-1.58.88s-1.14-.47-1.58-.88c-.24-.24-.5-.5-.71-.58-.21-.08-.55-.08-.88-.09-.6 0-1.3-.02-1.78-.5s-.5-1.17-.5-1.78v-.1c0-.3-.01-.58-.1-.78-.09-.21-.33-.47-.57-.71C1.47 9.13 1 8.64 1 8s.47-1.14.88-1.58c.24-.24.5-.5.58-.71.08-.21.08-.55.09-.88 0-.6.02-1.3.5-1.78s1.17-.5 1.78-.5h.1c.3 0 .58-.01.78-.1.21-.09.47-.33.71-.57C6.87 1.47 7.35 1 8 1s1.14.47 1.57.88c.25.24.52.5.72.58.21.08.55.08.88.09.6 0 1.3.02 1.78.5s.5 1.17.5 1.78v.1c0 .3.01.58.1.78Zm-5.76 4.83 4.03-4.03-1.06-1.06-3.5 3.5-2-2L4.19 8l2.53 2.53c.3.3.77.3 1.06 0Z"/></svg>` : ''}
+              </div>
               ${item.followers_count?`<div class="artist-meta">${fmtNum(item.followers_count)} followers</div>`:''}
             </div>`).join('')}
           </div>`;
@@ -653,14 +651,15 @@
     function renderFeed(artists) {
       const container = document.getElementById('feedList');
       if (!artists.length) { container.innerHTML = '<div class="state-box"><p>No artists found.</p></div>'; return; }
-      container.innerHTML = `<div class="artist-grid-2col">${artists.map((a, i) => `
-        <div class="artist-grid-card" onclick="openArtistProfile('${esc(a.permalink_url||'')}')">
+      container.innerHTML = `<div class="horizontal-scroll" style="padding:0 14px">${artists.map((a, i) => `
+        <div class="artist-card" onclick="openArtistProfile('${esc(a.permalink_url||'')}')">
           ${a.avatar_url
-            ? `<img class="feed-avatar" src="${esc(a.avatar_url)}" loading="lazy" alt="" onerror="this.outerHTML='<div class=\\'feed-avatar-ph\\'>🎵</div>'" />`
-            : `<div class="feed-avatar-ph">🎵</div>`}
+            ? `<img class="artist-avatar" src="${esc(a.avatar_url)}" loading="lazy" alt="" onerror="this.outerHTML='<div class=\\'artist-avatar-ph\\'>🎵</div>'" />`
+            : `<div class="artist-avatar-ph">🎵</div>`}
           <div class="feed-info">
             <div class="feed-name">
               <span>${esc(a.username)}</span>
+              ${a.verified ? `<svg width="12" height="12" viewBox="0 0 16 16" fill="none" style="flex-shrink:0"><path fill="#1DA1F2" d="M13.54 5.7c.1.22.34.48.58.72.41.44.88.93.88 1.58s-.47 1.14-.88 1.57c-.24.25-.5.52-.58.72-.08.21-.08.55-.09.88 0 .6-.02 1.3-.5 1.78s-1.17.5-1.78.5h-.1c-.3 0-.58.01-.78.1-.21.09-.47.33-.71.57-.44.41-.93.88-1.58.88s-1.14-.47-1.58-.88c-.24-.24-.5-.5-.71-.58-.21-.08-.55-.08-.88-.09-.6 0-1.3-.02-1.78-.5s-.5-1.17-.5-1.78v-.1c0-.3-.01-.58-.1-.78-.09-.21-.33-.47-.57-.71C1.47 9.13 1 8.64 1 8s.47-1.14.88-1.58c.24-.24.5-.5.58-.71.08-.21.08-.55.09-.88 0-.6.02-1.3.5-1.78s1.17-.5 1.78-.5h.1c.3 0 .58-.01.78-.1.21-.09.47-.33.71-.57C6.87 1.47 7.35 1 8 1s1.14.47 1.57.88c.25.24.52.5.72.58.21.08.55.08.88.09.6 0 1.3.02 1.78.5s.5 1.17.5 1.78v.1c0 .3.01.58.1.78Zm-5.76 4.83 4.03-4.03-1.06-1.06-3.5 3.5-2-2L4.19 8l2.53 2.53c.3.3.77.3 1.06 0Z"/></svg>` : ''}
             </div>
             <div class="feed-followers">${fmtNum(a.followers_count)} Followers</div>
           </div>
@@ -705,7 +704,10 @@
           <div class="ap-hero-content">
             ${avatarEl}
             <div class="ap-hero-info">
-              <div class="ap-name">${esc(u.username)}</div>
+              <div class="ap-name">
+                <span>${esc(u.username)}</span>
+                ${u.verified ? `<svg width="16" height="16" viewBox="0 0 16 16" fill="none" style="flex-shrink:0"><path fill="#1DA1F2" d="M13.54 5.7c.1.22.34.48.58.72.41.44.88.93.88 1.58s-.47 1.14-.88 1.57c-.24.25-.5.52-.58.72-.08.21-.08.55-.09.88 0 .6-.02 1.3-.5 1.78s-1.17.5-1.78.5h-.1c-.3 0-.58.01-.78.1-.21.09-.47.33-.71.57-.44.41-.93.88-1.58.88s-1.14-.47-1.58-.88c-.24-.24-.5-.5-.71-.58-.21-.08-.55-.08-.88-.09-.6 0-1.3-.02-1.78-.5s-.5-1.17-.5-1.78v-.1c0-.3-.01-.58-.1-.78-.09-.21-.33-.47-.57-.71C1.47 9.13 1 8.64 1 8s.47-1.14.88-1.58c.24-.24.5-.5.58-.71.08-.21.08-.55.09-.88 0-.6.02-1.3.5-1.78s1.17-.5 1.78-.5h.1c.3 0 .58-.01.78-.1.21-.09.47-.33.71-.57C6.87 1.47 7.35 1 8 1s1.14.47 1.57.88c.25.24.52.5.72.58.21.08.55.08.88.09.6 0 1.3.02 1.78.5s.5 1.17.5 1.78v.1c0 .3.01.58.1.78Zm-5.76 4.83 4.03-4.03-1.06-1.06-3.5 3.5-2-2L4.19 8l2.53 2.53c.3.3.77.3 1.06 0Z"/></svg>` : ''}
+              </div>
               <div class="ap-stats">
                 <span>${fmtNum(u.followers_count)} Followers</span>
                 <span>${fmtNum(u.followings_count)} Following</span>
@@ -911,18 +913,15 @@
     }
 
     function srUserHTML(u) {
-  return `
+      return `
         <div class="sr-item" onclick="openArtistProfile('${esc(u.permalink_url||'')}')">
           ${u.avatar_url
             ? `<img class="sr-avatar" src="${esc(u.avatar_url)}" loading="lazy" alt="" onerror="this.outerHTML='<div class=\\'sr-avatar-ph\\'>👤</div>'">`
             : `<div class="sr-avatar-ph">👤</div>`}
           <div class="sr-info">
-            <div class="sr-title">${esc(u.username||'')}
-              ${u.verified ? `
-                <svg data-testid="verified-badge" width="14" height="14" class="UserCell_Badge__1QjSo" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                  <path fill="#1DA1F2" d="M13.54 5.7c.1.22.34.48.58.72.41.44.88.93.88 1.58s-.47 1.14-.88 1.57c-.24.25-.5.52-.58.72-.08.21-.08.55-.09.88 0 .6-.02 1.3-.5 1.78s-1.17.5-1.78.5h-.1c-.3 0-.58.01-.78.1-.21.09-.47.33-.71.57-.44.41-.93.88-1.58.88s-1.14-.47-1.58-.88c-.24-.24-.5-.5-.71-.58-.21-.08-.55-.08-.88-.09-.6 0-1.3-.02-1.78-.5s-.5-1.17-.5-1.78v-.1c0-.3-.01-.58-.1-.78-.09-.21-.33-.47-.57-.71C1.47 9.13 1 8.64 1 8s.47-1.14.88-1.58c.24-.24.5-.5.58-.71.08-.21.08-.55.09-.88 0-.6.02-1.3.5-1.78s1.17-.5 1.78-.5h.1c.3 0 .58-.01.78-.1.21-.09.47-.33.71-.57C6.87 1.47 7.35 1 8 1s1.14.47 1.57.88c.25.24.52.5.72.58.21.08.55.08.88.09.6 0 1.3.02 1.78.5s.5 1.17.5 1.78v.1c0 .3.01.58.1.78Zm-5.76 4.83 4.03-4.03-1.06-1.06-3.5 3.5-2-2L4.19 8l2.53 2.53c.3.3.77.3 1.06 0Z"></path>
-                </svg>
-              ` : ''}
+            <div class="sr-title">
+              <span>${esc(u.username||'')}</span>
+              ${u.verified ? `<svg width="14" height="14" viewBox="0 0 16 16" fill="none" style="flex-shrink:0"><path fill="#1DA1F2" d="M13.54 5.7c.1.22.34.48.58.72.41.44.88.93.88 1.58s-.47 1.14-.88 1.57c-.24.25-.5.52-.58.72-.08.21-.08.55-.09.88 0 .6-.02 1.3-.5 1.78s-1.17.5-1.78.5h-.1c-.3 0-.58.01-.78.1-.21.09-.47.33-.71.57-.44.41-.93.88-1.58.88s-1.14-.47-1.58-.88c-.24-.24-.5-.5-.71-.58-.21-.08-.55-.08-.88-.09-.6 0-1.3-.02-1.78-.5s-.5-1.17-.5-1.78v-.1c0-.3-.01-.58-.1-.78-.09-.21-.33-.47-.57-.71C1.47 9.13 1 8.64 1 8s.47-1.14.88-1.58c.24-.24.5-.5.58-.71.08-.21.08-.55.09-.88 0-.6.02-1.3.5-1.78s1.17-.5 1.78-.5h.1c.3 0 .58-.01.78-.1.21-.09.47-.33.71-.57C6.87 1.47 7.35 1 8 1s1.14.47 1.57.88c.25.24.52.5.72.58.21.08.55.08.88.09.6 0 1.3.02 1.78.5s.5 1.17.5 1.78v.1c0 .3.01.58.1.78Zm-5.76 4.83 4.03-4.03-1.06-1.06-3.5 3.5-2-2L4.19 8l2.53 2.53c.3.3.77.3 1.06 0Z"/></svg>` : ''}
             </div>
             <div class="sr-followers">
               <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor" style="opacity:.5">
@@ -933,7 +932,7 @@
             </div>
           </div>
         </div>`;
-}
+    }
 
     function srPlaylistHTML(p) {
       const meta = [p.track_count ? p.track_count+' tracks' : null, timeAgo(p.created_at)||null].filter(Boolean).join(' · ');
@@ -1048,94 +1047,94 @@
     }
 
     function renderPlaylistPage(pl) {
-const ownerName = pl.user?.username || '';
-tracks = (pl.tracks || []).map(t => ({
-id: t.id,
-title: t.title || '',
-duration: t.duration,
-artwork_url: t.artwork_url || pl.artwork_url,
-permalink_url: t.permalink_url,
-user: { username: t.user?.username || ownerName },
-playback_count: t.playback_count || 0,
-likes_count: t.likes_count || 0,
-comment_count: t.comment_count || 0
-}));
-currentContext = 'playlist';
+      const ownerName = pl.user?.username || '';
+      tracks = (pl.tracks || []).map(t => ({
+        id: t.id,
+        title: t.title || '',
+        duration: t.duration,
+        artwork_url: t.artwork_url || pl.artwork_url,
+        permalink_url: t.permalink_url,
+        user: { username: t.user?.username || ownerName },
+        playback_count: t.playback_count || 0,
+        likes_count: t.likes_count || 0,
+        comment_count: t.comment_count || 0
+      }));
+      currentContext = 'playlist';
 
-const date = pl.created_at ? new Date(pl.created_at).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}) : '';
-const body = document.getElementById('playlistPageBody');
-body.innerHTML = `
-<div style="position:relative">
-  <div class="pl-hero">
-    ${pl.artwork_url ? `<img class="pl-hero-img" src="${esc(pl.artwork_url)}" alt="" />` : `<div class="pl-hero-ph">🎵</div>`}
-    <div class="pl-hero-grad"></div>
-  </div>
-  <div class="pl-info">
-    <div class="pl-title">${esc(pl.title||'Playlist')}</div>
-    <div class="pl-curator">
-      ${esc(ownerName)}
-      ${pl.user?.verified ? `
-      <svg data-testid="verified-badge" width="12" height="12" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" style="vertical-align: middle; margin-left: 4px;">
-        <path fill="#1DA1F2" d="M13.54 5.7c.1.22.34.48.58.72.41.44.88.93.88 1.58s-.47 1.14-.88 1.57c-.24.25-.5.52-.58.72-.08.21-.08.55-.09.88 0 .6-.02 1.3-.5 1.78s-1.17.5-1.78.5h-.1c-.3 0-.58.01-.78.1-.21.09-.47.33-.71.57-.44.41-.93.88-1.58.88s-1.14-.47-1.58-.88c-.24-.24-.5-.5-.71-.58-.21-.08-.55-.08-.88-.09-.6 0-1.3-.02-1.78-.5s-.5-1.17-.5-1.78v-.1c0-.3-.01-.58-.1-.78-.09-.21-.33-.47-.57-.71C1.47 9.13 1 8.64 1 8s.47-1.14.88-1.58c.24-.24.5-.5.58-.71.08-.21.08-.55.09-.88 0-.6.02-1.3.5-1.78s1.17-.5 1.78-.5h.1c.3 0 .58-.01.78-.1.21-.09.47-.33.71-.57C6.87 1.47 7.35 1 8 1s1.14.47 1.57.88c.25.24.52.5.72.58.21.08.55.08.88.09.6 0 1.3.02 1.78.5s.5 1.17.5 1.78v.1c0 .3.01.58.1.78Zm-5.76 4.83 4.03-4.03-1.06-1.06-3.5 3.5-2-2L4.19 8l2.53 2.53c.3.3.77.3 1.06 0Z"></path>
-      </svg>
-      ` : ''}
-    </div>
-    <div class="pl-meta-row">Playlist &nbsp;·&nbsp; ${pl.duration||''} &nbsp;·&nbsp; ${pl.track_count||tracks.length} Tracks${date?' &nbsp;·&nbsp; '+date:''}</div>
-    <div class="pl-actions">
-      <button class="pl-action-btn">
-        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
-        </svg>
-        ${fmtNum(pl.likes_count)}
-      </button>
-      <button class="pl-action-btn">
-        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <polyline points="17 1 21 5 17 9" />
-          <path d="M3 11V9a4 4 0 0 1 4-4h14" />
-          <polyline points="7 23 3 19 7 15" />
-          <path d="M21 13v2a4 4 0 0 1-4 4H3" />
-        </svg>
-        ${fmtNum(pl.reposts_count||0)}
-      </button>
-      <button class="pl-action-btn">
-        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" />
-          <polyline points="16 6 12 2 8 6" />
-          <line x1="12" y1="2" x2="12" y2="15" />
-        </svg>
-      </button>
-      <button class="pl-shuffle-btn" onclick="shufflePlay()">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-          <polyline points="16 3 21 3 21 8" />
-          <line x1="4" y1="20" x2="21" y2="3" />
-          <polyline points="21 16 21 21 16 21" />
-          <line x1="15" y1="15" x2="21" y2="21" />
-        </svg>
-      </button>
-    </div>
-  </div>
-          <div class="pl-track-list">
-            ${tracks.map((t,i)=>`
-              <div class="pl-track-item" id="pltItem${i}" onclick="playTrack(${i});openNowPlaying()">
-                ${t.artwork_url
-                  ? `<img class="pl-track-art" src="${esc(t.artwork_url)}" loading="lazy" alt="" onerror="this.outerHTML='<div class=\\'pl-track-art-ph\\'>🎵</div>'" />`
-                  : `<div class="pl-track-art-ph">🎵</div>`}
-                <div class="pl-track-info">
-                  <div class="pl-track-title">${esc(t.title)}</div>
-                  <div class="pl-track-artist">${esc(t.user?.username||'')}</div>
-                </div>
-                <div class="pl-track-dur">${t.duration||''}</div>
-                <button class="dl-btn" onclick="event.stopPropagation(); downloadTrack(event, ${i})">
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                    <polyline points="7 10 12 15 17 10"/>
-                    <line x1="12" y1="15" x2="12" y2="3"/>
-                  </svg>
-                  DL
-                </button>
-              </div>`).join('')}
+      const date = pl.created_at ? new Date(pl.created_at).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}) : '';
+      const body = document.getElementById('playlistPageBody');
+      body.innerHTML = `
+      <div style="position:relative">
+        <div class="pl-hero">
+          ${pl.artwork_url ? `<img class="pl-hero-img" src="${esc(pl.artwork_url)}" alt="" />` : `<div class="pl-hero-ph">🎵</div>`}
+          <div class="pl-hero-grad"></div>
+        </div>
+        <div class="pl-info">
+          <div class="pl-title">${esc(pl.title||'Playlist')}</div>
+          <div class="pl-curator">
+            ${esc(ownerName)}
+            ${pl.user?.verified ? `
+            <svg width="12" height="12" viewBox="0 0 16 16" fill="none" style="vertical-align: middle; margin-left: 4px;">
+              <path fill="#1DA1F2" d="M13.54 5.7c.1.22.34.48.58.72.41.44.88.93.88 1.58s-.47 1.14-.88 1.57c-.24.25-.5.52-.58.72-.08.21-.08.55-.09.88 0 .6-.02 1.3-.5 1.78s-1.17.5-1.78.5h-.1c-.3 0-.58.01-.78.1-.21.09-.47.33-.71.57-.44.41-.93.88-1.58.88s-1.14-.47-1.58-.88c-.24-.24-.5-.5-.71-.58-.21-.08-.55-.08-.88-.09-.6 0-1.3-.02-1.78-.5s-.5-1.17-.5-1.78v-.1c0-.3-.01-.58-.1-.78-.09-.21-.33-.47-.57-.71C1.47 9.13 1 8.64 1 8s.47-1.14.88-1.58c.24-.24.5-.5.58-.71.08-.21.08-.55.09-.88 0-.6.02-1.3.5-1.78s1.17-.5 1.78-.5h.1c.3 0 .58-.01.78-.1.21-.09.47-.33.71-.57C6.87 1.47 7.35 1 8 1s1.14.47 1.57.88c.25.24.52.5.72.58.21.08.55.08.88.09.6 0 1.3.02 1.78.5s.5 1.17.5 1.78v.1c0 .3.01.58.1.78Zm-5.76 4.83 4.03-4.03-1.06-1.06-3.5 3.5-2-2L4.19 8l2.53 2.53c.3.3.77.3 1.06 0Z"></path>
+            </svg>
+            ` : ''}
           </div>
-        </div>`;
+          <div class="pl-meta-row">Playlist &nbsp;·&nbsp; ${pl.duration||''} &nbsp;·&nbsp; ${pl.track_count||tracks.length} Tracks${date?' &nbsp;·&nbsp; '+date:''}</div>
+          <div class="pl-actions">
+            <button class="pl-action-btn">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+              </svg>
+              ${fmtNum(pl.likes_count)}
+            </button>
+            <button class="pl-action-btn">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="17 1 21 5 17 9" />
+                <path d="M3 11V9a4 4 0 0 1 4-4h14" />
+                <polyline points="7 23 3 19 7 15" />
+                <path d="M21 13v2a4 4 0 0 1-4 4H3" />
+              </svg>
+              ${fmtNum(pl.reposts_count||0)}
+            </button>
+            <button class="pl-action-btn">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" />
+                <polyline points="16 6 12 2 8 6" />
+                <line x1="12" y1="2" x2="12" y2="15" />
+              </svg>
+            </button>
+            <button class="pl-shuffle-btn" onclick="shufflePlay()">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <polyline points="16 3 21 3 21 8" />
+                <line x1="4" y1="20" x2="21" y2="3" />
+                <polyline points="21 16 21 21 16 21" />
+                <line x1="15" y1="15" x2="21" y2="21" />
+              </svg>
+            </button>
+          </div>
+        </div>
+        <div class="pl-track-list">
+          ${tracks.map((t,i)=>`
+            <div class="pl-track-item" id="pltItem${i}" onclick="playTrack(${i});openNowPlaying()">
+              ${t.artwork_url
+                ? `<img class="pl-track-art" src="${esc(t.artwork_url)}" loading="lazy" alt="" onerror="this.outerHTML='<div class=\\'pl-track-art-ph\\'>🎵</div>'" />`
+                : `<div class="pl-track-art-ph">🎵</div>`}
+              <div class="pl-track-info">
+                <div class="pl-track-title">${esc(t.title)}</div>
+                <div class="pl-track-artist">${esc(t.user?.username||'')}</div>
+              </div>
+              <div class="pl-track-dur">${t.duration||''}</div>
+              <button class="dl-btn" onclick="event.stopPropagation(); downloadTrack(event, ${i})">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                  <polyline points="7 10 12 15 17 10"/>
+                  <line x1="12" y1="15" x2="12" y2="3"/>
+                </svg>
+                DL
+              </button>
+            </div>`).join('')}
+        </div>
+      </div>`;
       body.scrollTop = 0;
     }
 
