@@ -86,9 +86,15 @@
     .horizontal-scroll .playlist-thumb-ph { width: 140px; height: 140px; background: linear-gradient(135deg, #2b2b2b, #111); display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 700; color: var(--text); padding: 8px; text-align: center; }
     .horizontal-scroll .artist-card { flex: 0 0 120px; width: 120px; scroll-snap-align: start; background: var(--surface); border-radius: 10px; padding: 12px 8px; text-align: center; cursor: pointer; transition: background 0.15s, transform 0.15s; border: 1px solid transparent; }
     .horizontal-scroll .artist-card:hover { background: var(--surface2); transform: translateY(-2px); border-color: var(--border); }
+    
+    /* Grid styling para sa Feed at Artist Profile na tag-dalawa pababa */
+    .grid-2col { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; padding: 0 14px; }
+    .grid-2col .artist-card { width: 100%; flex: unset; display: flex; align-items: center; gap: 10px; text-align: left; padding: 10px; }
+    .grid-2col .artist-avatar, .grid-2col .artist-avatar-ph { width: 50px; height: 50px; margin: 0; flex-shrink: 0; }
+    
     .artist-avatar { width: 64px; height: 64px; border-radius: 50%; object-fit: cover; background: var(--surface3); margin: 0 auto 8px; display: block; }
     .artist-avatar-ph { width: 64px; height: 64px; border-radius: 50%; background: linear-gradient(135deg, var(--accent), #9b4dca); margin: 0 auto 8px; display: flex; align-items: center; justify-content: center; font-size: 24px; }
-    .artist-name { font-weight: 600; font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: flex; align-items: center; justify-content: center; gap: 3px; }
+    .artist-name { font-weight: 600; font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: flex; align-items: center; gap: 3px; }
     .artist-meta { font-size: 11px; color: var(--muted); margin-top: 2px; }
     .playlist-info { padding: 8px 10px 10px; }
     .playlist-name { font-weight: 600; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 2px; }
@@ -157,13 +163,15 @@
     .ap-desc { padding: 14px 18px; font-size: 13px; color: var(--sub); line-height: 1.55; border-bottom: 1px solid var(--border); }
     .ap-section-head { padding: 16px 18px 10px; font-size: 16px; font-weight: 700; }
     .ap-playlist-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; padding: 0 14px 14px; }
+    .ap-playlist-grid .playlist-card { width: 100%; flex: unset; }
+    .ap-playlist-grid .playlist-thumb, .ap-playlist-grid .playlist-thumb-ph { width: 100%; height: auto; aspect-ratio: 1; }
     .ap-tracks-list { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; padding: 0 14px 16px; }
     .ap-track-card { background: var(--surface); border-radius: 8px; overflow: hidden; cursor: pointer; padding: 8px; display: flex; flex-direction: column; gap: 6px; transition: background 0.15s; }
     .ap-track-card:hover { background: var(--surface2); }
     .ap-track-thumb { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 6px; background: var(--surface3); }
     .feed-info { flex: 1; min-width: 0; }
-    .feed-name { font-size: 12px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: flex; align-items: center; justify-content: center; gap: 3px; margin-bottom: 2px; }
-    .feed-followers { display: flex; align-items: center; justify-content: center; gap: 4px; font-size: 11px; color: var(--sub); }
+    .feed-name { font-size: 12px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: flex; align-items: center; gap: 3px; margin-bottom: 2px; }
+    .feed-followers { display: flex; align-items: center; gap: 4px; font-size: 11px; color: var(--sub); }
     .state-box { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 60px 20px; color: var(--muted); text-align: center; gap: 12px; }
     .state-box svg { opacity: 0.3; }
     .state-box p { font-size: 15px; }
@@ -651,7 +659,9 @@
     function renderFeed(artists) {
       const container = document.getElementById('feedList');
       if (!artists.length) { container.innerHTML = '<div class="state-box"><p>No artists found.</p></div>'; return; }
-      container.innerHTML = `<div class="horizontal-scroll" style="padding:0 14px">${artists.map((a, i) => `
+      
+      // Ginawang grid-2col para maging tag-dalawa pababa
+      container.innerHTML = `<div class="grid-2col">${artists.map((a, i) => `
         <div class="artist-card" onclick="openArtistProfile('${esc(a.permalink_url||'')}')">
           ${a.avatar_url
             ? `<img class="artist-avatar" src="${esc(a.avatar_url)}" loading="lazy" alt="" onerror="this.outerHTML='<div class=\\'artist-avatar-ph\\'>🎵</div>'" />`
@@ -736,6 +746,7 @@
       }
 
       if (u.playlists && u.playlists.length) {
+        // Ginawang ap-playlist-grid (tag-dalawa pababa) para sa playlists sa loob ng artist page
         html += `<div class="ap-section-head">Playlists</div><div class="ap-playlist-grid">`;
         u.playlists.forEach(p => {
           const thumb = p.artwork_url
