@@ -539,9 +539,6 @@ app.get("/scdl", async (req, res) => {
 });
 
 
-
-
-
 app.get("/discover", async (req, res) => {
   try {
     const response = await axios.get("https://m.soundcloud.com/discover", {
@@ -555,153 +552,21 @@ app.get("/discover", async (req, res) => {
     if (!rawJson) return res.status(500).json({ error: "Could not parse discover page" });
 
     const parsedData = JSON.parse(rawJson);
-    const pageProps = parsedData?.props?.pageProps;
-    const initialStoreState = pageProps?.initialStoreState || {};
-    const entities = initialStoreState?.entities || {};
 
-    const playlists = entities?.playlists || {};
-    const users     = entities?.users     || {};
-    const tracks    = entities?.tracks    || {};
-    const sysPlaylists = entities?.systemPlaylists || {};
-    const msc       = entities?.mixedSelectionsCollections || {};
-
-    function resolvePlaylist(urn) {
-      const entry = playlists[urn] || sysPlaylists[urn];
-      const p = entry?.data || entry;
-      if (!p) return null;
-
-      let pUrl = p.permalink_url;
-      let genreName = "";
-      if (typeof p.id === 'string' && p.id.includes('trending-by-genre:')) {
-        genreName = p.id.split(':').pop();
-        pUrl = `https://m.soundcloud.com/discover/sets/trending-by-genre:${genreName}`;
-      } else if (!pUrl && p.id) {
-        genreName = typeof p.id === 'string' ? p.id.split(':').pop() : '';
-        pUrl = genreName ? `https://soundcloud.com/tag/${genreName}` : null;
-      }
-
-      let artwork = p.artwork_url || p.avatar_url;
-      if (!artwork && p.tracks && p.tracks.length > 0) {
-        const firstTrackId = p.tracks[0];
-        const trackEntry = tracks[firstTrackId];
-        const tData = trackEntry?.data || trackEntry;
-        if (tData?.artwork_url) {
-          artwork = tData.artwork_url;
-        }
-      }
-
-      return {
-        id: p.id,
-        title: p.title || (genreName ? genreName.toUpperCase() : 'Playlist'),
-        track_count: p.track_count || (p.tracks ? p.tracks.length : 0),
-        likes_count: p.likes_count || 0,
-        duration_ms: p.duration || 0,
-        duration: formatDuration(p.duration),
-        artwork_url: artUrl(artwork),
-        permalink_url: pUrl,
-        genre: p.genre || null,
-        user: p.user ? {
-          id: p.user.id,
-          username: p.user.username,
-          avatar_url: artUrl(p.user.avatar_url),
-          permalink_url: p.user.permalink_url
-        } : null
-      };
-    }
-
-    function resolveUser(urn) {
-      const entry = users[urn];
-      const u = entry?.data || entry;
-      if (!u) return null;
-      return {
-        id: u.id,
-        username: u.username,
-        full_name: u.full_name || null,
-        followers_count: u.followers_count,
-        track_count: u.track_count,
-        avatar_url: artUrl(u.avatar_url),
-        permalink_url: u.permalink_url
-      };
-    }
-
-    function resolveTrack(urn) {
-      const entry = tracks[urn];
-      const t = entry?.data || entry;
-      if (!t) return null;
-      return {
-        id: t.id,
-        title: t.title,
-        playback_count: t.playback_count,
-        likes_count: t.likes_count,
-        duration_ms: t.duration,
-        duration: formatDuration(t.duration),
-        artwork_url: artUrl(t.artwork_url),
-        permalink_url: t.permalink_url,
-        genre: t.genre || null,
-        user: t.user ? {
-          id: t.user.id,
-          username: t.user.username,
-          avatar_url: artUrl(t.user.avatar_url),
-          permalink_url: t.user.permalink_url
-        } : null
-      };
-    }
-
-    function parseCollectionItems(collection) {
-      if (!Array.isArray(collection)) return [];
-      return collection.map(item => {
-        const schema = item.schema || item.type || item.kind;
-        const id = item.id || item.urn;
-
-        if (schema === "playlist" || schema === "system-playlist" || item.title || (typeof id === 'string' && id.includes('playlist'))) {
-          return { type: "playlist", ...(resolvePlaylist(id) || item) };
-        }
-        if (schema === "user" || item.username) {
-          return { type: "user", ...(resolveUser(id) || item) };
-        }
-        if (schema === "track") {
-          return { type: "track", ...(resolveTrack(id) || item) };
-        }
-
-        return item;
-      }).filter(Boolean);
-    }
-
-    let sections = Object.values(msc).map(entry => {
-      const sel = entry?.data || entry;
-      const items = parseCollectionItems(sel?.collection || sel?.items);
-
-      return {
-        title: sel.title,
-        urn: sel.urn,
-        items
-      };
+    res.json({
+      author: "yazky",
+      ...parsedData.props.pageProps
     });
-
-    if (sections.length === 0 && pageProps?.hydratableData) {
-      const selections = pageProps.hydratableData.mixedSelections || pageProps.hydratableData.selections || [];
-      sections = selections.map(sel => ({
-        title: sel.title,
-        urn: sel.urn,
-        items: parseCollectionItems(sel.collection || sel.items)
-      }));
-    }
-
-    if (sections.length === 0 && pageProps?.selection) {
-      const mainSel = pageProps.selection;
-      sections = [{
-        title: mainSel.title || "Discover",
-        urn: mainSel.urn || null,
-        items: parseCollectionItems(mainSel.collection || mainSel.items)
-      }];
-    }
-
-    res.json({ author: "yazky", sections });
 
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
+
+
+
+
+        
 
 
 
