@@ -87,6 +87,12 @@
     .horizontal-scroll .playlist-card:hover { background: var(--surface2); transform: translateY(-2px); border-color: var(--border); }
     .horizontal-scroll .playlist-thumb { width: 140px; height: 140px; object-fit: cover; background: var(--surface3); display: block; }
     .horizontal-scroll .playlist-thumb-ph { width: 140px; height: 140px; background: linear-gradient(135deg, #2b2b2b, #111); display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 700; color: var(--text); padding: 8px; text-align: center; }
+    .horizontal-scroll .artist-card { flex: 0 0 110px; width: 110px; scroll-snap-align: start; background: var(--surface); border-radius: 10px; padding: 12px 8px; text-align: center; cursor: pointer; transition: background 0.15s, transform 0.15s; border: 1px solid transparent; }
+    .horizontal-scroll .artist-card:hover { background: var(--surface2); transform: translateY(-2px); border-color: var(--border); }
+    .artist-avatar { width: 64px; height: 64px; border-radius: 50%; object-fit: cover; background: var(--surface3); margin: 0 auto 8px; display: block; }
+    .artist-avatar-ph { width: 64px; height: 64px; border-radius: 50%; background: linear-gradient(135deg, var(--accent), #9b4dca); margin: 0 auto 8px; display: flex; align-items: center; justify-content: center; font-size: 24px; }
+    .artist-name { font-weight: 600; font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: flex; align-items: center; justify-content: center; gap: 3px; }
+    .artist-meta { font-size: 11px; color: var(--muted); margin-top: 2px; }
     .playlist-info { padding: 8px 10px 10px; }
     .playlist-name { font-weight: 600; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 2px; }
     .playlist-meta { font-size: 11px; color: var(--muted); }
@@ -507,6 +513,7 @@
     let currentSearchType = 'all';
     let lastSearchQuery = '';
     let currentContext = null;
+    let userInitiatedPause = false;
 
     function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
     function fmtNum(n) { if (!n) return '0'; if (n>=1e6) return (n/1e6).toFixed(1)+'M'; if (n>=1e3) return (n/1e3).toFixed(1)+'K'; return String(n); }
@@ -562,6 +569,17 @@
         .filter(Boolean);
     }
 
+    function getEntityData(entities, type) {
+      return Object.values((entities && entities[type]) || {})
+        .map(entry => {
+          if (!entry) return null;
+          if (entry.data) return entry.data;
+          if (entry.username || entry.title) return entry;
+          return null;
+        })
+        .filter(Boolean);
+    }
+
     async function loadDiscover() {
       try {
         const res = await fetch('/discover');
@@ -581,8 +599,24 @@
       const entities = state.entities || {};
       const playlists = getPlaylistEntities(json);
       const systemPlaylists = getSystemPlaylists(json);
+      const users = getEntityData(entities, 'users');
+      const seenUsernames = new Set();
+      const uniqueUsers = users.filter(u => {
+        const key = (u.permalink_url || u.username || '').toLowerCase();
+        if (seenUsernames.has(key)) return false;
+        seenUsernames.add(key);
+        return true;
+      });
 
-      if (!playlists.length && !systemPlaylists.length) {
+      const seenPlaylistIds = new Set();
+      const dedupe = list => list.filter(p => {
+        const key = String(p.id || p.permalink_url || p.title || '');
+        if (seenPlaylistIds.has(key)) return false;
+        seenPlaylistIds.add(key);
+        return true;
+      });
+
+      if (!playlists.length && !uniqueUsers.length && !systemPlaylists.length) {
         container.innerHTML = '<div class="state-box"><p>No discover content found.</p></div>';
         return;
       }
@@ -596,8 +630,25 @@
           <div class="discover-subtitle">Hear what&#39;s trending in the community on SoundCloud</div>
         </div>`;
 
-      if (curated.length) html += discoverSectionHtml('Curated by SoundCloud', curated);
-      if (voiceNotes.length) html += discoverSectionHtml('Exclusive Voice Notes', voiceNotes);
+      if (uniqueUsers.length) {
+        html += `
+          <div class="discover-section">
+            <div class="section-head"><div class="section-title">Artists to watch out for</div></div>
+            <div class="horizontal-scroll">
+              ${uniqueUsers.map(u => `
+                <div class="artist-card" onclick="openArtistProfile('${esc(u.permalink_url||'')}')">
+                  ${u.avatar_url
+                    ? `<img class="artist-avatar" src="${esc(u.avatar_url)}" loading="lazy" alt="" onerror="this.outerHTML='<div class=&quot;artist-avatar-ph&quot;>🎵</div>'" />`
+                    : `<div class="artist-avatar-ph">🎵</div>`}
+                  <div class="artist-name">${esc(u.username||'')}</div>
+                  ${u.followers_count ? `<div class="artist-meta">${fmtNum(u.followers_count)} followers</div>` : ''}
+                </div>`).join('')}
+            </div>
+          </div>`;
+      }
+
+      if (curated.length) html += discoverSectionHtml('Curated by SoundCloud', dedupe(curated));
+      if (voiceNotes.length) html += discoverSectionHtml('Exclusive Voice Notes', dedupe(voiceNotes));
 
       if (systemPlaylists.length) {
         html += `
@@ -624,10 +675,6 @@
           </div>`;
       } else {
         html += genreChipsHtml();
-      }
-
-      if (!curated.length && !voiceNotes.length && playlists.length) {
-        html += discoverSectionHtml('Curated by SoundCloud', playlists);
       }
 
       container.innerHTML = html;
@@ -1203,6 +1250,7 @@
       const t = tracks[idx];
       if (!t) return;
       currentIdx = idx;
+      userInitiatedPause = false;
 
       document.querySelectorAll('.track-item,.pl-track-item').forEach(el => {
         const i = parseInt(el.id.replace(/\D/g,''));
@@ -1347,8 +1395,8 @@
 
     function togglePlay() {
       if (!audio.src) return;
-      if (audio.paused) { audio.play().catch(()=>{}); setPause(false); }
-      else { audio.pause(); setPause(true); }
+      if (audio.paused) { userInitiatedPause = false; audio.play().catch(()=>{}); setPause(false); }
+      else { userInitiatedPause = true; audio.pause(); setPause(true); }
     }
 
     function setPause(paused) {
@@ -1369,6 +1417,13 @@
       }
     }
 
+    function autoNext() {
+      if (userInitiatedPause) return;
+      if (currentIdx < tracks.length - 1) {
+        playTrack(currentIdx + 1);
+      }
+    }
+
     function updateSkipBtns() {
       const btns = document.querySelectorAll('.np-skip-btn');
       if (btns.length < 2) return;
@@ -1384,9 +1439,9 @@
       renderWaveform(pct);
     });
 
-    audio.addEventListener('ended', () => skipTrack(1));
-    audio.addEventListener('play', () => setPause(false));
-    audio.addEventListener('pause', () => setPause(true));
+    audio.addEventListener('ended', autoNext);
+    audio.addEventListener('play', () => { userInitiatedPause = false; setPause(false); });
+    audio.addEventListener('pause', () => { setPause(true); });
 
     async function downloadTrack(e, idx) {
       e.stopPropagation();
