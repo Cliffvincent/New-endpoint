@@ -508,6 +508,7 @@
     let lastSearchQuery = '';
     let currentContext = null;
     let userInitiatedPause = false;
+    let playToken = 0;
 
     function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
     function fmtNum(n) { if (!n) return '0'; if (n>=1e6) return (n/1e6).toFixed(1)+'M'; if (n>=1e3) return (n/1e3).toFixed(1)+'K'; return String(n); }
@@ -578,7 +579,6 @@
       container.innerHTML = '';
       discoverTracks = [];
 
-      const state = (json && json.initialStoreState) || {};
       const playlists = getPlaylistEntities(json);
       const systemPlaylists = getSystemPlaylists(json);
 
@@ -1193,7 +1193,6 @@
           </div>
         </div>`;
       body.scrollTop = 0;
-      prefetchTrack(0);
     }
 
     function shufflePlay() {
@@ -1210,6 +1209,7 @@
       if (!t) return;
       currentIdx = idx;
       userInitiatedPause = false;
+      const token = ++playToken;
 
       document.querySelectorAll('.track-item,.pl-track-item').forEach(el => {
         const i = parseInt(el.id.replace(/\D/g,''));
@@ -1224,37 +1224,54 @@
       updateMiniPlayer(t);
       updateNowPlaying(t);
 
-      loadAndPlay(idx);
+      const cached = audioCache[t.id];
+      if (!cached?.audioUrl) {
+        audio.pause();
+        try { audio.removeAttribute('src'); } catch {}
+        document.getElementById('npTimeCur').textContent = '0:00';
+        document.getElementById('npTimeDur').textContent = '0:00';
+        document.getElementById('miniProgress').style.width = '0%';
+      }
+
+      loadAndPlay(idx, token);
       prefetchTrack(idx + 1);
       prefetchTrack(idx + 2);
       prefetchTrack(idx + 3);
     }
 
-    function loadAndPlay(idx) {
+    function startPlayback(token) {
+      if (token !== playToken) return;
+      audio.play().catch(() => {
+        setTimeout(() => {
+          if (token === playToken) audio.play().catch(() => setPause(true));
+        }, 350);
+      });
+      setPause(false);
+    }
+
+    function loadAndPlay(idx, token) {
       const t = tracks[idx];
       if (!t?.permalink_url) return;
       const cached = audioCache[t.id];
       if (cached?.audioUrl) {
         applyScdlMeta(idx, cached);
         audio.src = cached.audioUrl;
-        audio.play().catch(()=>{});
-        setPause(false);
+        startPlayback(token);
         return;
       }
-      prefetchTrack(idx, true);
+      prefetchTrack(idx, true, token);
     }
 
-    function prefetchTrack(idx, playWhenReady) {
+    function prefetchTrack(idx, playWhenReady, token) {
       const t = tracks[idx];
       if (!t?.permalink_url) return;
       if (audioCache[t.id] || inflight[t.id]) {
-        if (playWhenReady && audioCache[t.id] && currentIdx === idx) {
+        if (playWhenReady && audioCache[t.id] && currentIdx === idx && (!token || token === playToken)) {
           const cached = audioCache[t.id];
           if (cached?.audioUrl) {
             applyScdlMeta(idx, cached);
             audio.src = cached.audioUrl;
-            audio.play().catch(()=>{});
-            setPause(false);
+            startPlayback(token || playToken);
           }
         }
         return;
@@ -1265,13 +1282,12 @@
         .then(data => {
           const results = data.results;
           if (results) audioCache[t.id] = results;
-          if (playWhenReady && results && currentIdx === idx) {
+          if (playWhenReady && results && currentIdx === idx && (!token || token === playToken)) {
             applyScdlMeta(idx, results);
             const url = results.audioUrl;
             if (url) {
               audio.src = url;
-              audio.play().catch(()=>{});
-              setPause(false);
+              startPlayback(token || playToken);
             }
           }
         }).catch(()=>{}).finally(() => { delete inflight[t.id]; });
@@ -1286,7 +1302,7 @@
         const artist = results.user.username;
         document.getElementById('npArtist').textContent = artist;
         document.getElementById('miniArtist').textContent = artist;
-        tracks[idx].user = { username: artist };
+        if (tracks[idx]) tracks[idx].user = { username: artist };
       }
     }
 
@@ -1330,7 +1346,7 @@
       });
       navigator.mediaSession.setActionHandler('previoustrack', () => skipTrack(-1));
       navigator.mediaSession.setActionHandler('nexttrack', () => skipTrack(1));
-      navigator.mediaSession.setActionHandler('play', () => { audio.play(); setPause(false); });
+      navigator.mediaSession.setActionHandler('play', () => { userInitiatedPause = false; audio.play().catch(()=>{}); setPause(false); });
       navigator.mediaSession.setActionHandler('pause', () => { audio.pause(); setPause(true); });
     }
 
@@ -1353,6 +1369,7 @@
     }
 
     function togglePlay() {
+      if (!audio.src && tracks[currentIdx]) { playTrack(currentIdx); return; }
       if (!audio.src) return;
       if (audio.paused) { userInitiatedPause = false; audio.play().catch(()=>{}); setPause(false); }
       else { userInitiatedPause = true; audio.pause(); setPause(true); }
@@ -1370,17 +1387,12 @@
     function skipTrack(dir) {
       if (!tracks.length) return;
       const next = currentIdx + dir;
-      if (next >= 0 && next < tracks.length) {
-        audio.pause();
-        playTrack(next);
-      }
+      if (next >= 0 && next < tracks.length) playTrack(next);
     }
 
     function autoNext() {
       if (userInitiatedPause) return;
-      if (currentIdx < tracks.length - 1) {
-        playTrack(currentIdx + 1);
-      }
+      if (currentIdx < tracks.length - 1) playTrack(currentIdx + 1);
     }
 
     function updateSkipBtns() {
