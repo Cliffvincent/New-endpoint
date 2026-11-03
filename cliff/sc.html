@@ -240,6 +240,10 @@
     .bar:nth-child(3) { animation-delay: 0.3s; height: 13px; }
     .bar:nth-child(4) { animation-delay: 0.45s; height: 9px; }
     @keyframes bounce { from { transform: scaleY(0.4); } to { transform: scaleY(1); } }
+    .genre-chips { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch; padding-bottom: 4px; }
+    .genre-chips::-webkit-scrollbar { display: none; }
+    .genre-chip { flex-shrink: 0; background: var(--surface2); border: 1px solid var(--border); border-radius: 999px; color: var(--text); font-size: 13px; font-weight: 600; font-family: inherit; padding: 8px 16px; cursor: pointer; transition: background 0.15s, border-color 0.15s, color 0.15s; white-space: nowrap; }
+    .genre-chip:hover { background: var(--accent-dim); border-color: var(--accent); color: var(--accent); }
     .track-stats { display: none; }
   </style>
 </head>
@@ -554,6 +558,14 @@
       return Object.values(state.systemPlaylists || {}).map(p => p && p.data).filter(Boolean);
     }
 
+    function getSystemPlaylists(json) {
+      const state = (json && json.initialStoreState) || {};
+      const src = (state.entities && state.entities.systemPlaylists) || state.systemPlaylists || {};
+      return Object.values(src)
+        .map(entry => entry && entry.data ? entry.data : null)
+        .filter(Boolean);
+    }
+
     async function loadDiscover() {
       try {
         const res = await fetch('/discover');
@@ -564,27 +576,110 @@
       }
     }
 
+    function getEntityData(entities, type) {
+      return Object.values((entities && entities[type]) || {})
+        .map(entry => {
+          if (!entry) return null;
+          if (entry.data) return entry.data;
+          if (entry.username || entry.title) return entry;
+          return null;
+        })
+        .filter(Boolean);
+    }
+
     function renderDiscover(json) {
       const container = document.getElementById('discoverView');
       container.innerHTML = '';
       discoverTracks = [];
 
+      const state = (json && json.initialStoreState) || {};
+      const entities = state.entities || {};
       const playlists = getPlaylistEntities(json);
-      if (!playlists.length) {
+      const systemPlaylists = getSystemPlaylists(json);
+      const users = getEntityData(entities, 'users');
+      const entityTracks = getEntityData(entities, 'tracks');
+
+      if (!playlists.length && !users.length && !entityTracks.length && !systemPlaylists.length) {
         container.innerHTML = '<div class="state-box"><p>No discover content found.</p></div>';
         return;
       }
 
-      const isSystemSet = p => /^(Buzzing|The Upload|New & Hot|Hip-Hop|Electronic|Pop|Rock|R&B|Charts|Popular)/i.test(p.title || '');
-      const genreSets = playlists.filter(isSystemSet);
-      const featured = playlists.filter(p => !isSystemSet(p));
+      const buzzing = playlists.filter(p => /^Buzzing/i.test(p.title || ''));
+      const voiceNotes = playlists.filter(p => /^Voice Notes/i.test(p.title || ''));
+      const curated = playlists.filter(p => !/^Buzzing|^Voice Notes/i.test(p.title || ''));
 
       let html = '';
-      if (genreSets.length) html += discoverSectionHtml('Trending by Genre', genreSets);
-      if (featured.length) html += discoverSectionHtml('Featured Playlists', featured);
-      if (!html) html = discoverSectionHtml('Featured Playlists', playlists);
+
+      if (users.length) {
+        html += `
+          <div class="discover-section">
+            <div class="section-head"><div class="section-title">Artists to watch out for</div></div>
+            <div class="horizontal-scroll">
+              ${users.map(u => `
+                <div class="artist-card" onclick="openArtistProfile('${esc(u.permalink_url||'')}')">
+                  ${u.avatar_url
+                    ? `<img class="artist-avatar" src="${esc(u.avatar_url)}" loading="lazy" alt="" onerror="this.outerHTML='<div class=\'artist-avatar-ph\'>🎵</div>'" />`
+                    : `<div class="artist-avatar-ph">🎵</div>`}
+                  <div class="artist-name">${esc(u.username||'')}</div>
+                  ${u.followers_count ? `<div class="artist-meta">${fmtNum(u.followers_count)} followers</div>` : ''}
+                </div>`).join('')}
+            </div>
+          </div>`;
+      }
+
+      if (buzzing.length) html += discoverSectionHtml('Artists to watch out for', buzzing);
+      if (curated.length) html += discoverSectionHtml('Curated by SoundCloud', curated);
+      if (voiceNotes.length) html += discoverSectionHtml('Exclusive Voice Notes', voiceNotes);
+
+      if (systemPlaylists.length) {
+        html += `
+          <div class="discover-section">
+            <div class="section-head"><div class="section-title">Trending by genre</div></div>
+            <div class="horizontal-scroll">
+              ${systemPlaylists.map(item => {
+                const genreId = String(item.id || '').replace(/^.*trending-by-genre:/, '') || String(item.id || '');
+                const url = item.permalink_url || ('https://m.soundcloud.com/discover/sets/trending-by-genre:' + genreId);
+                const title = item.title || genreId.replace(/[-:]/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+                const thumb = item.calculated_artwork_url || item.artwork_url;
+                return `
+                <div class="playlist-card" onclick="openPlaylist('${esc(url)}','${currentTab}')">
+                  ${thumb
+                    ? `<img class="playlist-thumb" src="${esc(thumb)}" loading="lazy" alt="" onerror="this.outerHTML='<div class=\'playlist-thumb-ph\'>${esc(title)}</div>'" />`
+                    : `<div class="playlist-thumb-ph">${esc(title)}</div>`}
+                  <div class="playlist-info">
+                    <div class="playlist-name">${esc(title)}</div>
+                    <div class="playlist-meta">${esc(item.description || (item.tracks && item.tracks.length ? item.tracks.length + ' tracks' : ''))}</div>
+                  </div>
+                </div>`;
+              }).join('')}
+            </div>
+          </div>`;
+      } else {
+        html += genreChipsHtml();
+      }
+
+      if (!buzzing.length && !curated.length && !voiceNotes.length && playlists.length) {
+        html += discoverSectionHtml('Curated by SoundCloud', playlists);
+      }
 
       container.innerHTML = html;
+    }
+
+    function genreChipsHtml() {
+      const genres = ['All Genres','Hip Hop','Pop','Electronic','Rock','R&B','Trap','House','Techno','Ambient'];
+      return `
+        <div class="discover-section">
+          <div class="section-head"><div class="section-title">Trending by genre</div></div>
+          <div class="genre-chips">
+            ${genres.map(g => `<button class="genre-chip" onclick="searchGenre('${esc(g)}')">${esc(g)}</button>`).join('')}
+          </div>
+        </div>`;
+    }
+
+    function searchGenre(g) {
+      switchTab('search');
+      document.getElementById('searchInput').value = g;
+      doSearch(g, 'all');
     }
 
     function discoverSectionHtml(title, items) {
