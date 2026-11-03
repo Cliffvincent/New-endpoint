@@ -57,6 +57,9 @@
     .topbar-search-btn:hover { color: var(--text); background: var(--surface2); }
     .page-body { flex: 1; overflow-y: auto; overflow-x: hidden; padding-bottom: calc(var(--mini-h) + var(--nav-h)); }
     .main { padding: 16px 14px; }
+    .discover-header { padding: 4px 0 20px; }
+    .discover-title { font-size: 24px; font-weight: 800; letter-spacing: -0.5px; margin-bottom: 5px; }
+    .discover-subtitle { font-size: 13px; color: var(--sub); line-height: 1.45; }
     .bottom-nav { position: absolute; bottom: 0; left: 0; right: 0; height: var(--nav-h); background: rgba(12,12,12,0.98); backdrop-filter: blur(20px); border-top: 1px solid var(--border); display: flex; align-items: stretch; z-index: 500; }
     .nav-tab { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; cursor: pointer; background: none; border: none; color: var(--muted); transition: color 0.15s; font-family: inherit; padding-bottom: 4px; }
     .nav-tab.active { color: var(--accent); }
@@ -71,9 +74,9 @@
     .mini-title { font-weight: 600; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .mini-artist { font-size: 11px; color: var(--sub); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .mini-btns { display: flex; gap: 4px; align-items: center; }
-    .mini-btn { background: none; border: none; color: var(--sub); cursor: pointer; padding: 7px; display: flex; align-items: center; border-radius: 50%; transition: color 0.2s; }
+    .mini-btn { background: none; border: none; color: var(--sub); cursor: pointer; padding: 8px; display: flex; align-items: center; border-radius: 50%; transition: color 0.2s; }
     .mini-btn:hover { color: var(--text); }
-    .mini-play-btn { width: 34px; height: 34px; background: var(--text); border: none; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--bg); transition: transform 0.1s; }
+    .mini-play-btn { width: 42px; height: 42px; background: var(--text); border: none; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--bg); transition: transform 0.1s; }
     .mini-play-btn:hover { transform: scale(1.06); }
     .discover-section { margin-bottom: 28px; }
     .section-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
@@ -449,17 +452,17 @@
       </div>
       <div class="mini-btns" onclick="event.stopPropagation()">
         <button class="mini-btn" onclick="skipTrack(-1)">
-          <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
             <path d="M6 6h2v12H6zm3.5 6 8.5 6V6z"/>
           </svg>
         </button>
         <button class="mini-play-btn" onclick="togglePlay()">
-          <svg id="miniPlayIcon" width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
+          <svg id="miniPlayIcon" width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
             <path d="M8 5v14l11-7z"/>
           </svg>
         </button>
         <button class="mini-btn" onclick="skipTrack(1)">
-          <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
             <path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/>
           </svg>
         </button>
@@ -608,7 +611,11 @@
       const voiceNotes = playlists.filter(p => /^Voice Notes/i.test(p.title || ''));
       const curated = playlists.filter(p => !/^Buzzing|^Voice Notes/i.test(p.title || ''));
 
-      let html = '';
+      let html = `
+        <div class="discover-header">
+          <div class="discover-title">Discover Tracks and Playlists</div>
+          <div class="discover-subtitle">Hear what&#39;s trending in the community on SoundCloud</div>
+        </div>`;
 
       if (users.length) {
         html += `
@@ -1227,6 +1234,8 @@
       openNowPlaying();
     }
 
+    const audioCache = {};
+
     function playTrack(idx) {
       const t = tracks[idx];
       if (!t) return;
@@ -1245,24 +1254,57 @@
       updateMiniPlayer(t);
       updateNowPlaying(t);
 
-      if (t.permalink_url) {
-        fetch('/scdl?url=' + encodeURIComponent(t.permalink_url))
-          .then(r => r.json())
-          .then(data => {
-            const url = data.results?.audioUrl;
-            if (url) { audio.src = url; audio.play(); setPause(false); }
-            if (data.results) {
-              document.getElementById('npLikeCount').textContent = fmtNum(data.results.likes_count);
-              document.getElementById('npCommentCount').textContent = fmtNum(data.results.comment_count);
-              document.getElementById('npRepostCount').textContent = fmtNum(data.results.reposts_count);
-              if (data.results.user?.username) {
-                const artist = data.results.user.username;
-                document.getElementById('npArtist').textContent = artist;
-                document.getElementById('miniArtist').textContent = artist;
-                tracks[idx].user = { username: artist };
-              }
-            }
-          }).catch(()=>{});
+      loadAndPlay(idx);
+      prefetchTrack(idx + 1);
+      prefetchTrack(idx - 1);
+    }
+
+    function loadAndPlay(idx) {
+      const t = tracks[idx];
+      if (!t?.permalink_url) return;
+      const cached = audioCache[t.id];
+      if (cached?.audioUrl) {
+        applyScdlMeta(idx, cached);
+        audio.src = cached.audioUrl;
+        audio.play();
+        setPause(false);
+        return;
+      }
+      fetch('/scdl?url=' + encodeURIComponent(t.permalink_url))
+        .then(r => r.json())
+        .then(data => {
+          const results = data.results;
+          if (results) audioCache[t.id] = results;
+          applyScdlMeta(idx, results);
+          const url = results?.audioUrl;
+          if (url && currentIdx === idx) {
+            audio.src = url;
+            audio.play();
+            setPause(false);
+          }
+        }).catch(()=>{});
+    }
+
+    function prefetchTrack(idx) {
+      const t = tracks[idx];
+      if (!t?.permalink_url || audioCache[t.id]) return;
+      fetch('/scdl?url=' + encodeURIComponent(t.permalink_url))
+        .then(r => r.json())
+        .then(data => {
+          if (data.results) audioCache[t.id] = data.results;
+        }).catch(()=>{});
+    }
+
+    function applyScdlMeta(idx, results) {
+      if (!results) return;
+      document.getElementById('npLikeCount').textContent = fmtNum(results.likes_count);
+      document.getElementById('npCommentCount').textContent = fmtNum(results.comment_count);
+      document.getElementById('npRepostCount').textContent = fmtNum(results.reposts_count);
+      if (results.user?.username) {
+        const artist = results.user.username;
+        document.getElementById('npArtist').textContent = artist;
+        document.getElementById('miniArtist').textContent = artist;
+        tracks[idx].user = { username: artist };
       }
     }
 
