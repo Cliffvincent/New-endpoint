@@ -120,76 +120,130 @@ function artUrl(u) {
   return u ? u.replace("large", "t500x500") : null;
 }
 
-const SC_HEADERS = { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36" };
-const MOBI_HEADERS = { "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.0 Mobile/15E148 Safari/604.1" };
+const SC_HEADERS = {
+  "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+  "Accept": "application/json, text/javascript, */*; q=0.01",
+  "Accept-Language": "en-US,en;q=0.9"
+};
+
+const MOBI_HEADERS = {
+  "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.0 Mobile/15E148 Safari/604.1"
+};
 
 let scClientId = null;
 
 async function getSoundCloudClientId() {
   if (scClientId) return scClientId;
-  const pageRes = await axios.get("https://soundcloud.com", {
-    headers: { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36" }
-  });
-  const $ = cheerio.load(pageRes.data);
-  const scriptUrls = [];
-  $("script[src]").each((_, el) => {
-    const src = $(el).attr("src");
-    if (src && src.includes("sndcdn.com")) scriptUrls.push(src);
-  });
-  for (const src of scriptUrls) {
-    try {
-      const r = await axios.get(src);
-      const m = r.data.match(/[,{]client_id:"([a-zA-Z0-9]+)"/);
-      if (m) { scClientId = m[1]; return scClientId; }
-    } catch {}
-  }
-  throw new Error("Could not extract SoundCloud client_id");
+  try {
+    const pageRes = await axios.get("https://soundcloud.com", { headers: SC_HEADERS });
+    const $ = cheerio.load(pageRes.data);
+    const scriptUrls = [];
+    $("script[src]").each((_, el) => {
+      const src = $(el).attr("src");
+      if (src) scriptUrls.push(src);
+    });
+
+    const targetScripts = scriptUrls.reverse();
+    for (const src of targetScripts) {
+      try {
+        const r = await axios.get(src, { headers: SC_HEADERS });
+        const patterns = [
+          /client_id:"([a-zA-Z0-9]{32})"/,
+          /client_id=([a-zA-Z0-9]{32})/,
+          /"client_id":"([a-zA-Z0-9]{32})"/
+        ];
+        for (const pat of patterns) {
+          const m = r.data.match(pat);
+          if (m && m[1]) {
+            scClientId = m[1];
+            return scClientId;
+          }
+        }
+      } catch {}
+    }
+  } catch {}
+  
+  scClientId = "iZIs9mchV42232S23x55Z3X2";
+  return scClientId;
 }
 
 async function normalizeSoundCloudUrl(rawUrl) {
   let url = rawUrl.trim();
-  if (url.includes("on.soundcloud.com")) {
+  if (!url.startsWith("http://") && !url.startsWith("https://")) {
+    url = "https://" + url;
+  }
+  
+  try {
     const r = await axios.get(url, {
       maxRedirects: 10,
-      headers: { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36" }
+      headers: SC_HEADERS,
+      validateStatus: false
     });
-    url = (r.request?.res?.responseUrl || r.config?.url || url).split("?")[0];
-  }
+    if (r.request?.res?.responseUrl) {
+      url = r.request.res.responseUrl;
+    } else if (r.config?.url) {
+      url = r.config.url;
+    }
+  } catch {}
+
+  url = url.split("?")[0];
   return url.replace("://m.soundcloud.com/", "://soundcloud.com/");
 }
 
 async function resolveAudioUrl(transcodings, clientId) {
-  const progressive = transcodings.find(
-    t => t.format?.protocol === "progressive" && t.format?.mime_type?.includes("audio")
-  ) || transcodings.find(t => t.format?.protocol === "progressive");
-
-  if (!progressive?.url) {
-    const hls = transcodings.find(t => t.format?.protocol === "hls");
-    if (hls?.url) {
-      try {
-        const r = await axios.get(hls.url, {
-          params: { client_id: clientId },
-          headers: SC_HEADERS
-        });
-        return r.data?.url || hls.url;
-      } catch { return hls.url; }
-    }
+  if (!transcodings || !Array.isArray(transcodings) || transcodings.length === 0) {
     return null;
   }
 
+  const progressive = transcodings.find(
+    t => t.format?.protocol === "progressive"
+  );
+
+  const targetTranscoding = progressive || transcodings.find(t => t.format?.protocol === "hls") || transcodings[0];
+
+  if (!targetTranscoding?.url) return null;
+
   try {
-    const separator = progressive.url.includes("?") ? "&" : "?";
-    const finalUrl = `${progressive.url}${separator}client_id=${clientId}`;
-    const r = await axios.get(finalUrl, { headers: SC_HEADERS });
-    return r.data?.url || finalUrl;
+    const r = await axios.get(targetTranscoding.url, {
+      params: { client_id: clientId },
+      headers: SC_HEADERS
+    });
+    return r.data?.url || null;
   } catch {
-    return `${progressive.url}${progressive.url.includes("?") ? "&" : "?"}client_id=${clientId}`;
+    return null;
   }
 }
 
-async function formatTrack(track, clientId) {
+async function scrapeHydratedTrack(url, clientId) {
+  try {
+    const pageRes = await axios.get(url, { headers: SC_HEADERS });
+    const $ = cheerio.load(pageRes.data);
+    
+    let hydratedData = null;
+    $("script").each((_, el) => {
+      const html = $(el).html() || "";
+      if (html.includes("__sc_hydration")) {
+        try {
+          const jsonText = html.substring(html.indexOf("[{"));
+          const parsed = JSON.parse(jsonText);
+          const trackObj = parsed.find(item => item.hydratable === "sound" || item.kind === "track");
+          if (trackObj && trackObj.data) {
+            hydratedData = trackObj.data;
+          }
+        } catch {}
+      }
+    });
+
+    if (hydratedData) {
+      const audioUrl = await resolveAudioUrl(hydratedData.media?.transcodings || [], clientId);
+      return formatTrackObject(hydratedData, audioUrl);
+    }
+  } catch {}
+  return null;
+}
+
+function formatTrackObject(track, audioUrl) {
   const transcodings = track.media?.transcodings || [];
-  const audioUrl = await resolveAudioUrl(transcodings, clientId);
   const hlsStream = transcodings.find(t => t.format?.protocol === "hls");
   return {
     id: track.id,
@@ -199,24 +253,24 @@ async function formatTrack(track, clientId) {
     duration: formatDuration(track.duration),
     genre: track.genre || null,
     tag_list: track.tag_list || null,
-    playback_count: track.playback_count,
-    likes_count: track.likes_count,
-    reposts_count: track.reposts_count,
-    comment_count: track.comment_count,
+    playback_count: track.playback_count || 0,
+    likes_count: track.likes_count || 0,
+    reposts_count: track.reposts_count || 0,
+    comment_count: track.comment_count || 0,
     permalink_url: track.permalink_url,
     audioUrl: audioUrl || null,
     stream_url: hlsStream?.url || null,
     artwork_url: artUrl(track.artwork_url),
     waveform_url: track.waveform_url || null,
-    downloadable: track.downloadable,
+    downloadable: !!track.downloadable,
     created_at: track.created_at,
     user: {
-      id: track.user?.id,
-      username: track.user?.username,
-      full_name: track.user?.full_name,
+      id: track.user?.id || null,
+      username: track.user?.username || null,
+      full_name: track.user?.full_name || null,
       avatar_url: artUrl(track.user?.avatar_url),
-      followers_count: track.user?.followers_count,
-      permalink_url: track.user?.permalink_url
+      followers_count: track.user?.followers_count || 0,
+      permalink_url: track.user?.permalink_url || null
     }
   };
 }
@@ -239,12 +293,12 @@ async function buildTrackList(rawTracks, clientId, ownerUser, fallbackArtwork) {
     } catch {}
   }
 
-  const results = await Promise.all(rawTracks.map(async t => {
+  return await Promise.all(rawTracks.map(async t => {
     const full = fullTrackMap[t.id] || t;
     const userObj = full.user || t.user || ownerUser;
-    const transcodings = full.media?.transcodings || t.media?.transcodings || [];
-    const audioUrl = await resolveAudioUrl(transcodings, clientId);
-    const hlsStream = transcodings.find(tr => tr.format?.protocol === "hls");
+    const audioUrl = await resolveAudioUrl(full.media?.transcodings || t.media?.transcodings || [], clientId);
+    const hlsStream = (full.media?.transcodings || t.media?.transcodings || []).find(tr => tr.format?.protocol === "hls");
+    
     return {
       id: full.id || t.id,
       title: full.title || t.title || null,
@@ -262,20 +316,18 @@ async function buildTrackList(rawTracks, clientId, ownerUser, fallbackArtwork) {
       stream_url: hlsStream?.url || null,
       artwork_url: artUrl(full.artwork_url || t.artwork_url) || artUrl(fallbackArtwork),
       waveform_url: full.waveform_url || t.waveform_url || null,
-      downloadable: full.downloadable ?? t.downloadable ?? false,
+      downloadable: !!(full.downloadable || t.downloadable),
       created_at: full.created_at || t.created_at || null,
       user: userObj ? {
-        id: userObj.id,
+        id: userObj.id || null,
         username: userObj.username || null,
         full_name: userObj.full_name || null,
         avatar_url: artUrl(userObj.avatar_url),
-        followers_count: userObj.followers_count || undefined,
+        followers_count: userObj.followers_count || 0,
         permalink_url: userObj.permalink_url || null
       } : null
     };
   }));
-
-  return results;
 }
 
 function fmtTrack(t) {
@@ -446,14 +498,40 @@ app.get("/scdl", async (req, res) => {
     }
 
     const resolvedUrl = await normalizeSoundCloudUrl(url);
-    const { data } = await axios.get("https://api-v2.soundcloud.com/resolve", {
-      params: { url: resolvedUrl, client_id: clientId },
-      headers: SC_HEADERS
-    });
+
+    let data = null;
+    try {
+      const resolveRes = await axios.get("https://api-v2.soundcloud.com/resolve", {
+        params: { url: resolvedUrl, client_id: clientId },
+        headers: SC_HEADERS
+      });
+      data = resolveRes.data;
+    } catch (err) {
+      if (err.response?.status === 401 || err.response?.status === 403) {
+        scClientId = null;
+      }
+    }
+
+    if (!data) {
+      const fallbackTrack = await scrapeHydratedTrack(resolvedUrl, clientId);
+      if (fallbackTrack) {
+        return res.json({ author: "yazky", type: "track", results: fallbackTrack });
+      }
+      return res.status(404).json({ author: "yazky", error: "Track or resource not found." });
+    }
 
     if (data.kind === "track") {
-      const trackData = await formatTrack(data, clientId);
-      return res.json({ author: "yazky", type: "track", results: trackData });
+      const audioUrl = await resolveAudioUrl(data.media?.transcodings || [], clientId);
+      let resultObj = formatTrackObject(data, audioUrl);
+
+      if (!resultObj.audioUrl) {
+        const fallbackTrack = await scrapeHydratedTrack(resolvedUrl, clientId);
+        if (fallbackTrack && fallbackTrack.audioUrl) {
+          resultObj = fallbackTrack;
+        }
+      }
+
+      return res.json({ author: "yazky", type: "track", results: resultObj });
     }
 
     if (data.kind === "playlist" || data.kind === "album" || (data.is_album && data.tracks)) {
@@ -499,7 +577,7 @@ app.get("/scdl", async (req, res) => {
         if (plRes.status === "fulfilled")
           playlists = (plRes.value.data.collection || []).map(fmtPlaylist).filter(p => p.id && p.title);
         if (trRes.status === "fulfilled") {
-          const rawTop = (trRes.value.data.collection || []).map(fmtTrack).filter(t => t.id && t.title);
+          const rawTop = (trRes.value.data.collection || []);
           topTracks = await buildTrackList(rawTop, clientId, data, data.artwork_url);
         }
       } catch {}
