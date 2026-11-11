@@ -187,8 +187,9 @@ async function resolveAudioUrl(transcodings, clientId) {
   }
 }
 
-function formatTrack(track, audioUrl) {
+async function formatTrack(track, clientId) {
   const transcodings = track.media?.transcodings || [];
+  const audioUrl = await resolveAudioUrl(transcodings, clientId);
   const hlsStream = transcodings.find(t => t.format?.protocol === "hls");
   return {
     id: track.id,
@@ -221,7 +222,7 @@ function formatTrack(track, audioUrl) {
 }
 
 async function buildTrackList(rawTracks, clientId, ownerUser, fallbackArtwork) {
-  const stubIds = rawTracks.filter(t => !t.title || !t.user).map(t => t.id).filter(Boolean);
+  const stubIds = rawTracks.filter(t => !t.title || !t.user || !t.media).map(t => t.id).filter(Boolean);
 
   const fullTrackMap = {};
   if (stubIds.length) {
@@ -238,28 +239,43 @@ async function buildTrackList(rawTracks, clientId, ownerUser, fallbackArtwork) {
     } catch {}
   }
 
-  return rawTracks.map(t => {
+  const results = await Promise.all(rawTracks.map(async t => {
     const full = fullTrackMap[t.id] || t;
     const userObj = full.user || t.user || ownerUser;
+    const transcodings = full.media?.transcodings || t.media?.transcodings || [];
+    const audioUrl = await resolveAudioUrl(transcodings, clientId);
+    const hlsStream = transcodings.find(tr => tr.format?.protocol === "hls");
     return {
       id: full.id || t.id,
       title: full.title || t.title || null,
+      description: full.description || t.description || null,
       duration_ms: full.duration || t.duration,
       duration: formatDuration(full.duration || t.duration),
+      genre: full.genre || t.genre || null,
+      tag_list: full.tag_list || t.tag_list || null,
+      playback_count: full.playback_count || t.playback_count || 0,
+      likes_count: full.likes_count || t.likes_count || 0,
+      reposts_count: full.reposts_count || t.reposts_count || 0,
+      comment_count: full.comment_count || t.comment_count || 0,
       permalink_url: full.permalink_url || t.permalink_url,
+      audioUrl: audioUrl || null,
+      stream_url: hlsStream?.url || null,
       artwork_url: artUrl(full.artwork_url || t.artwork_url) || artUrl(fallbackArtwork),
-      playback_count: full.playback_count || 0,
-      likes_count: full.likes_count || 0,
-      comment_count: full.comment_count || 0,
+      waveform_url: full.waveform_url || t.waveform_url || null,
+      downloadable: full.downloadable ?? t.downloadable ?? false,
+      created_at: full.created_at || t.created_at || null,
       user: userObj ? {
         id: userObj.id,
         username: userObj.username || null,
         full_name: userObj.full_name || null,
         avatar_url: artUrl(userObj.avatar_url),
+        followers_count: userObj.followers_count || undefined,
         permalink_url: userObj.permalink_url || null
       } : null
     };
-  });
+  }));
+
+  return results;
 }
 
 function fmtTrack(t) {
@@ -436,8 +452,8 @@ app.get("/scdl", async (req, res) => {
     });
 
     if (data.kind === "track") {
-      const audioUrl = await resolveAudioUrl(data.media?.transcodings || [], clientId);
-      return res.json({ author: "yazky", type: "track", results: formatTrack(data, audioUrl) });
+      const trackData = await formatTrack(data, clientId);
+      return res.json({ author: "yazky", type: "track", results: trackData });
     }
 
     if (data.kind === "playlist" || data.kind === "album" || (data.is_album && data.tracks)) {
@@ -482,8 +498,10 @@ app.get("/scdl", async (req, res) => {
         ]);
         if (plRes.status === "fulfilled")
           playlists = (plRes.value.data.collection || []).map(fmtPlaylist).filter(p => p.id && p.title);
-        if (trRes.status === "fulfilled")
-          topTracks = (trRes.value.data.collection || []).map(fmtTrack).filter(t => t.id && t.title);
+        if (trRes.status === "fulfilled") {
+          const rawTop = (trRes.value.data.collection || []).map(fmtTrack).filter(t => t.id && t.title);
+          topTracks = await buildTrackList(rawTop, clientId, data, data.artwork_url);
+        }
       } catch {}
       return res.json({
         author: "yazky", type: "user",
