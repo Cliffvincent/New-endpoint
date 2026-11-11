@@ -77,14 +77,14 @@ app.get("/tempmail/message", async function (req, res) {
 app.disable("x-powered-by");
 app.use(helmet({ crossOriginResourcePolicy: { policy: "cross-origin" } }));
 
-const UNSPLASH_ACCESS_KEY = "RZEIOVfPhS7vMLkFdd2TSKGFBS4o9_FmcV1Nje3FSjw";
+const UNSPLASH_ACCESS_KEY = 'RZEIOVfPhS7vMLkFdd2TSKGFBS4o9_FmcV1Nje3FSjw';
 
-app.get("/unsplash", async (req, res) => {
+app.get('/unsplash', async (req, res) => {
   const search = req.query.search;
   let count = parseInt(req.query.count) || 1;
 
   if (!search) {
-    return res.status(400).json({ error: "Search query is required" });
+    return res.status(400).json({ error: 'Search query is required' });
   }
 
   count = Math.min(count, 5);
@@ -95,18 +95,18 @@ app.get("/unsplash", async (req, res) => {
     const response = await axios.get(url);
     const cleanData = response.data.results.map((image) => ({
       id: image.id,
-      description: image.description || "No description available",
+      description: image.description || 'No description available',
       alt_description: image.alt_description,
       urls: image.urls,
       user: {
         name: image.user.name,
-        portfolio_url: image.user.portfolio_url
-      }
+        portfolio_url: image.user.portfolio_url,
+      },
     }));
 
     res.json(cleanData);
   } catch (error) {
-    res.status(500).json({ error: "Error fetching data from Unsplash" });
+    res.status(500).json({ error: 'Error fetching data from Unsplash' });
   }
 });
 
@@ -162,7 +162,7 @@ async function getSoundCloudClientId() {
       } catch {}
     }
   } catch {}
-
+  
   throw new Error("Could not extract SoundCloud client_id");
 }
 
@@ -171,7 +171,7 @@ async function normalizeSoundCloudUrl(rawUrl) {
   if (!url.startsWith("http://") && !url.startsWith("https://")) {
     url = "https://" + url;
   }
-
+  
   try {
     const r = await axios.get(url, {
       maxRedirects: 10,
@@ -200,48 +200,48 @@ async function resolveAudioUrl(transcodings, clientId) {
 
   if (progressive?.url) {
     try {
-      const r = await axios.get(progressive.url, {
-        params: { client_id: clientId },
-        headers: SC_HEADERS
-      });
-      if (r.data?.url) return r.data.url;
-    } catch {}
-  }
-
-  const hls = transcodings.find(t => t.format?.protocol === "hls");
-  if (!hls?.url) return null;
-
-  try {
-    const r = await axios.get(hls.url, {
-      params: { client_id: clientId },
-      headers: SC_HEADERS
-    });
-
-    const playlistUrl = r.data?.url;
-    if (!playlistUrl) return null;
-
-    if (playlistUrl.includes(".m3u8")) {
-      try {
-        const plRes = await axios.get(playlistUrl, { headers: SC_HEADERS });
-        const lines = String(plRes.data).split("\n").map(l => l.trim());
-        const segmentLine = lines.find(l => l && !l.startsWith("#"));
-        if (segmentLine) {
-          return new URL(segmentLine, playlistUrl).href;
-        }
-      } catch {}
+      const separator = progressive.url.includes("?") ? "&" : "?";
+      const finalUrl = `${progressive.url}${separator}client_id=${clientId}`;
+      const r = await axios.get(finalUrl, { headers: SC_HEADERS });
+      if (r.data && r.data.url) {
+        return r.data.url;
+      }
+      return finalUrl;
+    } catch (err) {
+      if (err.response && err.response.data && err.response.data.url) {
+        return err.response.data.url;
+      }
     }
-
-    return playlistUrl;
-  } catch {
-    return null;
   }
+
+  const hls = transcodings.find(
+    t => t.format?.protocol === "hls"
+  );
+
+  if (hls?.url) {
+    try {
+      const separator = hls.url.includes("?") ? "&" : "?";
+      const finalHlsUrl = `${hls.url}${separator}client_id=${clientId}`;
+      const r = await axios.get(finalHlsUrl, { headers: SC_HEADERS });
+      if (r.data && r.data.url) {
+        return r.data.url;
+      }
+      return finalHlsUrl;
+    } catch (err) {
+      if (err.response && err.response.data && err.response.data.url) {
+        return err.response.data.url;
+      }
+    }
+  }
+
+  return null;
 }
 
 async function scrapeHydratedTrack(url, clientId) {
   try {
     const pageRes = await axios.get(url, { headers: SC_HEADERS });
     const $ = cheerio.load(pageRes.data);
-
+    
     let hydratedData = null;
     $("script").each((_, el) => {
       const html = $(el).html() || "";
@@ -321,7 +321,7 @@ async function buildTrackList(rawTracks, clientId, ownerUser, fallbackArtwork) {
     const userObj = full.user || t.user || ownerUser;
     const audioUrl = await resolveAudioUrl(full.media?.transcodings || t.media?.transcodings || [], clientId);
     const hlsStream = (full.media?.transcodings || t.media?.transcodings || []).find(tr => tr.format?.protocol === "hls");
-
+    
     return {
       id: full.id || t.id,
       title: full.title || t.title || null,
@@ -413,7 +413,7 @@ function fmtPlaylist(p) {
 
 app.get("/sc", async (req, res) => {
   const query = req.query.search;
-  const type = req.query.type || "all";
+  const type  = req.query.type || "all";
   const limit = Math.min(parseInt(req.query.limit || "20"), 50);
 
   if (!query) return res.status(400).json({ error: "search query parameter is required" });
@@ -424,15 +424,15 @@ app.get("/sc", async (req, res) => {
 
     if (type === "all") {
       const [trRes, usRes, plRes, alRes] = await Promise.allSettled([
-        axios.get("https://api-v2.soundcloud.com/search/tracks", { params: { ...base, limit: 10 }, headers: SC_HEADERS }),
-        axios.get("https://api-v2.soundcloud.com/search/users", { params: { ...base, limit: 5 }, headers: SC_HEADERS }),
-        axios.get("https://api-v2.soundcloud.com/search/playlists", { params: { ...base, limit: 5 }, headers: SC_HEADERS }),
-        axios.get("https://api-v2.soundcloud.com/search/albums", { params: { ...base, limit: 5 }, headers: SC_HEADERS })
+        axios.get("https://api-v2.soundcloud.com/search/tracks",    { params: { ...base, limit: 10 }, headers: SC_HEADERS }),
+        axios.get("https://api-v2.soundcloud.com/search/users",     { params: { ...base, limit:  5 }, headers: SC_HEADERS }),
+        axios.get("https://api-v2.soundcloud.com/search/playlists", { params: { ...base, limit:  5 }, headers: SC_HEADERS }),
+        axios.get("https://api-v2.soundcloud.com/search/albums",    { params: { ...base, limit:  5 }, headers: SC_HEADERS })
       ]);
-      const tracks = trRes.status === "fulfilled" ? (trRes.value.data.collection || []).map(fmtTrack).filter(t => t.id && t.title) : [];
-      const users = usRes.status === "fulfilled" ? (usRes.value.data.collection || []).map(fmtUser).filter(u => u.id && u.username) : [];
+      const tracks    = trRes.status === "fulfilled" ? (trRes.value.data.collection || []).map(fmtTrack).filter(t => t.id && t.title) : [];
+      const users     = usRes.status === "fulfilled" ? (usRes.value.data.collection || []).map(fmtUser).filter(u => u.id && u.username) : [];
       const playlists = plRes.status === "fulfilled" ? (plRes.value.data.collection || []).map(fmtPlaylist).filter(p => p.id && p.title) : [];
-      const albums = alRes.status === "fulfilled" ? (alRes.value.data.collection || []).map(fmtPlaylist).filter(p => p.id && p.title) : [];
+      const albums    = alRes.status === "fulfilled" ? (alRes.value.data.collection || []).map(fmtPlaylist).filter(p => p.id && p.title) : [];
       return res.json({ author: "yazky", query, type: "all", tracks, users, playlists, albums });
     }
 
@@ -443,9 +443,9 @@ app.get("/sc", async (req, res) => {
     });
     const collection = data.collection || [];
     let results;
-    if (type === "users") results = collection.map(fmtUser).filter(u => u.id && u.username);
+    if (type === "users")     results = collection.map(fmtUser).filter(u => u.id && u.username);
     else if (type === "playlists" || type === "albums") results = collection.map(fmtPlaylist).filter(p => p.id && p.title);
-    else results = collection.map(fmtTrack).filter(t => t.id && t.title);
+    else                      results = collection.map(fmtTrack).filter(t => t.id && t.title);
 
     res.json({ author: "yazky", query, type, total: results.length, results });
 
@@ -750,11 +750,11 @@ app.get("/feed", async (req, res) => {
         "soundcloudmusicuk",
         "soundcloud-damedame",
         "soundcloud-hustle",
-        "soundcloud-peak"
+        "soundcloud-peak",
       ];
       const curatorIds = [603473631];
       const slugResults = await Promise.allSettled(
-        curatorSlugs.slice(1).map(s => axios.get("https://api-v2.soundcloud.com/resolve", {
+        curatorSlugs.slice(1).map(s => axios.get(`https://api-v2.soundcloud.com/resolve`, {
           params: { url: `https://soundcloud.com/${s}`, client_id: clientId }, headers: SC_HEADERS
         }))
       );
