@@ -163,8 +163,7 @@ async function getSoundCloudClientId() {
     }
   } catch {}
   
-  scClientId = "iZIs9mchV42232S23x55Z3X2";
-  return scClientId;
+  throw new Error("Could not extract SoundCloud client_id");
 }
 
 async function normalizeSoundCloudUrl(rawUrl) {
@@ -198,19 +197,26 @@ async function resolveAudioUrl(transcodings, clientId) {
   const progressive = transcodings.find(
     t => t.format?.protocol === "progressive"
   );
+  const hls = transcodings.find(
+    t => t.format?.protocol === "hls"
+  );
 
-  const targetTranscoding = progressive || transcodings.find(t => t.format?.protocol === "hls") || transcodings[0];
-
+  const targetTranscoding = progressive || hls || transcodings[0];
   if (!targetTranscoding?.url) return null;
 
   try {
-    const r = await axios.get(targetTranscoding.url, {
-      params: { client_id: clientId },
-      headers: SC_HEADERS
-    });
-    return r.data?.url || null;
-  } catch {
-    return null;
+    const separator = targetTranscoding.url.includes("?") ? "&" : "?";
+    const finalUrl = `${targetTranscoding.url}${separator}client_id=${clientId}`;
+    const r = await axios.get(finalUrl, { headers: SC_HEADERS });
+    if (r.data && r.data.url) {
+      return r.data.url;
+    }
+    return finalUrl;
+  } catch (err) {
+    if (err.response && err.response.data && err.response.data.url) {
+      return err.response.data.url;
+    }
+    return `${targetTranscoding.url}${targetTranscoding.url.includes("?") ? "&" : "?"}client_id=${clientId}`;
   }
 }
 
