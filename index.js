@@ -132,6 +132,11 @@ const MOBI_HEADERS = {
 
 let scClientId = null;
 
+function baseUrlFrom(req) {
+  const proto = req.headers["x-forwarded-proto"] || req.protocol || "https";
+  return `${proto}://${req.get("host")}`;
+}
+
 async function getSoundCloudClientId() {
   if (scClientId) return scClientId;
   try {
@@ -162,7 +167,7 @@ async function getSoundCloudClientId() {
       } catch {}
     }
   } catch {}
-  
+
   throw new Error("Could not extract SoundCloud client_id");
 }
 
@@ -171,7 +176,7 @@ async function normalizeSoundCloudUrl(rawUrl) {
   if (!url.startsWith("http://") && !url.startsWith("https://")) {
     url = "https://" + url;
   }
-  
+
   try {
     const r = await axios.get(url, {
       maxRedirects: 10,
@@ -194,37 +199,79 @@ async function resolveAudioUrl(transcodings, clientId) {
     return null;
   }
 
-  const progressive = transcodings.find(
-    t => t.format?.protocol === "progressive"
-  );
-  const hls = transcodings.find(
-    t => t.format?.protocol === "hls"
-  );
+  const isMp3 = t => (t.format?.mime_type || "").includes("audio/mpeg");
+  const progressive = transcodings.find(t => t.format?.protocol === "progressive" && isMp3(t))
+    || transcodings.find(t => t.format?.protocol === "progressive");
+  const hlsMp3 = transcodings.find(t => t.format?.protocol === "hls" && isMp3(t));
+  const hlsAny = transcodings.find(t => t.format?.protocol === "hls");
 
-  const targetTranscoding = progressive || hls || transcodings[0];
-  if (!targetTranscoding?.url) return null;
+  const target = progressive || hlsMp3 || hlsAny || transcodings[0];
+  if (!target?.url) return null;
+
+  const protocol = target.format?.protocol || "hls";
+  const sep = target.url.includes("?") ? "&" : "?";
+  const signedUrl = `${target.url}${sep}client_id=${clientId}`;
 
   try {
-    const separator = targetTranscoding.url.includes("?") ? "&" : "?";
-    const finalUrl = `${targetTranscoding.url}${separator}client_id=${clientId}`;
-    const r = await axios.get(finalUrl, { headers: SC_HEADERS });
+    const r = await axios.get(signedUrl, { headers: SC_HEADERS });
     if (r.data && r.data.url) {
-      return r.data.url;
+      return { url: r.data.url, protocol };
     }
-    return finalUrl;
-  } catch (err) {
-    if (err.response && err.response.data && err.response.data.url) {
-      return err.response.data.url;
-    }
-    return `${targetTranscoding.url}${targetTranscoding.url.includes("?") ? "&" : "?"}client_id=${clientId}`;
+    return { url: signedUrl, protocol };
+  } catch {
+    return { url: signedUrl, protocol };
   }
 }
 
-async function scrapeHydratedTrack(url, clientId) {
+function toAudioUrl(resolved, baseUrl) {
+  if (!resolved || !resolved.url) return null;
+  if (resolved.protocol === "progressive") return resolved.url;
+  return `${baseUrl}/scstream?url=${encodeURIComponent(resolved.url)}`;
+}
+
+async function getHlsSegments(m3u8Url) {
+  const r = await axios.get(m3u8Url, { headers: SC_HEADERS, responseType: "text" });
+  let lines = String(r.data).split("\n").map(l => l.trim()).filter(l => l && !l.startsWith("#"));
+
+  if (lines.length === 1 && lines[0].endsWith(".m3u8")) {
+    return getHlsSegments(new URL(lines[0], m3u8Url).href);
+  }
+
+  return lines.map(l => new URL(l, m3u8Url).href);
+}
+
+async function stitchHlsToMp3(m3u8Url) {
+  const segUrls = await getHlsSegments(m3u8Url);
+  const buffers = [];
+  for (const seg of segUrls) {
+    const r = await axios.get(seg, { headers: SC_HEADERS, responseType: "arraybuffer" });
+    buffers.push(Buffer.from(r.data));
+  }
+  return Buffer.concat(buffers);
+}
+
+app.get("/scstream", async (req, res) => {
+  const m3u8 = req.query.url;
+  if (!m3u8) return res.status(400).json({ error: "'url' query parameter is required" });
+
+  try {
+    const mp3 = await stitchHlsToMp3(m3u8);
+    res.set({
+      "Content-Type": "audio/mpeg",
+      "Content-Length": mp3.length,
+      "Content-Disposition": 'inline; filename="audio.mp3"'
+    });
+    return res.send(mp3);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+async function scrapeHydratedTrack(url, clientId, baseUrl) {
   try {
     const pageRes = await axios.get(url, { headers: SC_HEADERS });
     const $ = cheerio.load(pageRes.data);
-    
+
     let hydratedData = null;
     $("script").each((_, el) => {
       const html = $(el).html() || "";
@@ -241,8 +288,8 @@ async function scrapeHydratedTrack(url, clientId) {
     });
 
     if (hydratedData) {
-      const audioUrl = await resolveAudioUrl(hydratedData.media?.transcodings || [], clientId);
-      return formatTrackObject(hydratedData, audioUrl);
+      const resolved = await resolveAudioUrl(hydratedData.media?.transcodings || [], clientId);
+      return formatTrackObject(hydratedData, toAudioUrl(resolved, baseUrl));
     }
   } catch {}
   return null;
@@ -265,6 +312,7 @@ function formatTrackObject(track, audioUrl) {
     comment_count: track.comment_count || 0,
     permalink_url: track.permalink_url,
     audioUrl: audioUrl || null,
+    is_hls: !!(audioUrl && audioUrl.includes("/scstream")),
     stream_url: hlsStream?.url || null,
     artwork_url: artUrl(track.artwork_url),
     waveform_url: track.waveform_url || null,
@@ -281,7 +329,7 @@ function formatTrackObject(track, audioUrl) {
   };
 }
 
-async function buildTrackList(rawTracks, clientId, ownerUser, fallbackArtwork) {
+async function buildTrackList(rawTracks, clientId, ownerUser, fallbackArtwork, baseUrl) {
   const stubIds = rawTracks.filter(t => !t.title || !t.user || !t.media).map(t => t.id).filter(Boolean);
 
   const fullTrackMap = {};
@@ -302,9 +350,10 @@ async function buildTrackList(rawTracks, clientId, ownerUser, fallbackArtwork) {
   return await Promise.all(rawTracks.map(async t => {
     const full = fullTrackMap[t.id] || t;
     const userObj = full.user || t.user || ownerUser;
-    const audioUrl = await resolveAudioUrl(full.media?.transcodings || t.media?.transcodings || [], clientId);
+    const resolved = await resolveAudioUrl(full.media?.transcodings || t.media?.transcodings || [], clientId);
+    const audioUrl = toAudioUrl(resolved, baseUrl);
     const hlsStream = (full.media?.transcodings || t.media?.transcodings || []).find(tr => tr.format?.protocol === "hls");
-    
+
     return {
       id: full.id || t.id,
       title: full.title || t.title || null,
@@ -319,6 +368,7 @@ async function buildTrackList(rawTracks, clientId, ownerUser, fallbackArtwork) {
       comment_count: full.comment_count || t.comment_count || 0,
       permalink_url: full.permalink_url || t.permalink_url,
       audioUrl: audioUrl || null,
+      is_hls: !!(audioUrl && audioUrl.includes("/scstream")),
       stream_url: hlsStream?.url || null,
       artwork_url: artUrl(full.artwork_url || t.artwork_url) || artUrl(fallbackArtwork),
       waveform_url: full.waveform_url || t.waveform_url || null,
@@ -445,6 +495,8 @@ app.get("/scdl", async (req, res) => {
   const { url } = req.query;
   if (!url) return res.status(400).json({ author: "yazky", error: "'url' query parameter is required" });
 
+  const baseUrl = baseUrlFrom(req);
+
   try {
     const clientId = await getSoundCloudClientId();
 
@@ -472,7 +524,7 @@ app.get("/scdl", async (req, res) => {
       }
       rawTracks = rawTracks.slice(0, 200);
 
-      const tracks = await buildTrackList(rawTracks, clientId, sys.user || null, sys.calculated_artwork_url || sys.artwork_url);
+      const tracks = await buildTrackList(rawTracks, clientId, sys.user || null, sys.calculated_artwork_url || sys.artwork_url, baseUrl);
 
       const genreLabel = String(sys.title || sysId).replace(/^.*?trending-by-genre:/, "").replace(/[-:]/g, " ").replace(/\b\w/g, c => c.toUpperCase());
 
@@ -519,7 +571,7 @@ app.get("/scdl", async (req, res) => {
     }
 
     if (!data) {
-      const fallbackTrack = await scrapeHydratedTrack(resolvedUrl, clientId);
+      const fallbackTrack = await scrapeHydratedTrack(resolvedUrl, clientId, baseUrl);
       if (fallbackTrack) {
         return res.json({ author: "yazky", type: "track", results: fallbackTrack });
       }
@@ -527,11 +579,11 @@ app.get("/scdl", async (req, res) => {
     }
 
     if (data.kind === "track") {
-      const audioUrl = await resolveAudioUrl(data.media?.transcodings || [], clientId);
-      let resultObj = formatTrackObject(data, audioUrl);
+      const resolved = await resolveAudioUrl(data.media?.transcodings || [], clientId);
+      let resultObj = formatTrackObject(data, toAudioUrl(resolved, baseUrl));
 
       if (!resultObj.audioUrl) {
-        const fallbackTrack = await scrapeHydratedTrack(resolvedUrl, clientId);
+        const fallbackTrack = await scrapeHydratedTrack(resolvedUrl, clientId, baseUrl);
         if (fallbackTrack && fallbackTrack.audioUrl) {
           resultObj = fallbackTrack;
         }
@@ -542,7 +594,7 @@ app.get("/scdl", async (req, res) => {
 
     if (data.kind === "playlist" || data.kind === "album" || (data.is_album && data.tracks)) {
       const rawTracks = (data.tracks || []).slice(0, 100);
-      const tracks = await buildTrackList(rawTracks, clientId, data.user, data.artwork_url);
+      const tracks = await buildTrackList(rawTracks, clientId, data.user, data.artwork_url, baseUrl);
 
       return res.json({
         author: "yazky", type: "playlist",
@@ -584,7 +636,7 @@ app.get("/scdl", async (req, res) => {
           playlists = (plRes.value.data.collection || []).map(fmtPlaylist).filter(p => p.id && p.title);
         if (trRes.status === "fulfilled") {
           const rawTop = (trRes.value.data.collection || []);
-          topTracks = await buildTrackList(rawTop, clientId, data, data.artwork_url);
+          topTracks = await buildTrackList(rawTop, clientId, data, data.artwork_url, baseUrl);
         }
       } catch {}
       return res.json({
